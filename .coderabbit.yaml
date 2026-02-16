@@ -1,0 +1,121 @@
+# CodeRabbit configuration for HPAI modelling challenge
+# Following Abbott et al. workflow for infectious disease modelling
+# Workflow reference: https://github.com/seabbs/infectious-disease-modelling-with-multiple-datasources
+
+language: en-GB
+
+# Chat context for CodeRabbit to understand the project
+chat:
+  auto_reply: true
+
+reviews:
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  path_filters: []
+  abort_on_close: true
+  auto_review:
+    enabled: true
+    drafts: false
+  request_changes_workflow: false  # Auto-approve when comments resolved
+
+  path_instructions:
+    - path: "hpai-challenge/notes/step00_*.md"
+      instructions: |
+        This is Step 00 of the workflow: Data Source Characterisation.
+        Review for: completeness of data source coverage, appropriate use of the
+        six-category checklist (metadata, scope, resolution, quality, utility, practical),
+        and identification of potential biases and limitations.
+
+    - path: "hpai-challenge/notes/step01_*.md"
+      instructions: |
+        This is Step 01: Research Questions and Target Estimands.
+        Review for: clearly specified estimands, alignment with available data,
+        and identification of causal vs associational questions.
+
+    - path: "hpai-challenge/notes/step02_*.md"
+      instructions: |
+        This is Step 02: Process DAG Development.
+        Review for: biological plausibility of transmission mechanisms,
+        appropriate state variables, parameter identifiability considerations,
+        and clear distinction between latent states and observations.
+
+    - path: "hpai-challenge/notes/step03_*.md"
+      instructions: |
+        This is Step 03: Data Source Selection.
+        Review for: justified inclusion/exclusion decisions, appropriate handling
+        of missing data, and alignment with process DAG requirements.
+
+    - path: "hpai-challenge/notes/step04_*.md"
+      instructions: |
+        This is Step 04: Observation DAG Construction.
+        Review for: complete mapping from latent states to observations,
+        appropriate delay distributions, and detection process modelling.
+
+    - path: "hpai-challenge/notes/step05_*.md"
+      instructions: |
+        This is Step 05: Refining the Model DAGs.
+        Review for: parameter identifiability analysis, appropriate
+        reparameterizations, and documented simplifying assumptions.
+
+    - path: "hpai-challenge/notes/step06_*.md"
+      instructions: |
+        This is Step 06: Modularising DAGs.
+        Review for: independent testable modules, clear interfaces,
+        and appropriate development order.
+
+    - path: "hpai-challenge/notes/step07_*.md"
+      instructions: |
+        This is Step 07: Inference and Computation Choices.
+        Review for: appropriate likelihood formulation, justified choice
+        of inference method, and computational feasibility.
+
+    - path: "hpai-challenge/notes/step08_*.md"
+      instructions: |
+        This is Step 08: Model Implementation.
+        Review for: correct implementation of DAG specifications,
+        appropriate priors, and clean modular code.
+
+    - path: "hpai-challenge/notes/step09_*.md"
+      instructions: |
+        This is Step 09: Model Specification and Validation.
+        Review for: prior predictive checks, MCMC diagnostics,
+        posterior predictive checks, and simulation-based calibration.
+
+    - path: "hpai-challenge/notes/step10_*.md"
+      instructions: |
+        This is Step 10: Data Integration Choices.
+        Review for: appropriate integration strategy (joint vs staged),
+        module compatibility, and uncertainty propagation.
+
+    - path: "hpai-challenge/**/*.jl"
+      instructions: |
+        Julia implementation of HPAI transmission model.
+        Review for: type stability, efficient array operations,
+        appropriate use of Turing.jl/other probabilistic programming.
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: "local"
+
+# Project context:
+# This project follows the Abbott et al. "Workflow for Infectious Disease Modelling"
+# from https://github.com/seabbs/infectious-disease-modelling-with-multiple-datasources
+#
+# The workflow has 11 steps (00-10):
+# 00. Data Source Characterisation - structured checklist for epidemiological data
+# 01. Research Questions and Target Estimands - define what we want to estimate
+# 02. Process DAG Development - model the latent transmission process
+# 03. Data Source Selection - choose which data to use
+# 04. Observation DAG Construction - model how we observe the process
+# 05. Refining the Model DAGs - iterate on identifiability and assumptions
+# 06. Modularising DAGs - decompose into testable components
+# 07. Inference and Computation Choices - select fitting methods
+# 08. Model Implementation - write the code
+# 09. Model Specification and Validation - prior/posterior checks, diagnostics
+# 10. Data Integration Choices - combine modules and data sources
