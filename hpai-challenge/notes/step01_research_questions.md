@@ -60,7 +60,7 @@ This is purely descriptive — quantities to compute from data:
    - With uncertainty (credible intervals or distribution)
    - Stratified by production type if possible
 
-2. **Spatial prediction**: Per-farm infection probability at end of 4-week horizon (can be aggregated to district level for reporting)
+2. **Spatial prediction**: Per-farm infection probability $P(\text{infected by } t_{\text{end}} \mid \text{data})$ for each susceptible farm, using farm coordinates from `population.csv`. For district-level reporting, aggregate by summing expected cases within each district polygon.
 
 ### Formal Definition
 
