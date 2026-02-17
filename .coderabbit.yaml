@@ -19,7 +19,7 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
-  request_changes_workflow: false  # Auto-approve when comments resolved
+  request_changes_workflow: true  # Request changes, then approve when resolved
 
   path_instructions:
     - path: "hpai-challenge/notes/step00_*.md"
