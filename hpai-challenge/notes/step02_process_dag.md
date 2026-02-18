@@ -22,14 +22,16 @@ Based on the epidemic narrative and research questions, the transmission process
 
 ### Farm-level states
 
-Each farm $j$ at time $t$ is in one of:
+Each farm $j$ at time $t$ is in exactly one state $\text{State}_j(t) \in \{S, I, R, A\}$:
 
-| State | Symbol | Description |
-|-------|--------|-------------|
-| Susceptible | $S_j(t) = 1$ | Farm has birds present, not infected |
-| Infected | $I_j(t) = 1$ | Farm infected, potentially infectious to others |
-| Removed | $R_j(t) = 1$ | Farm culled or depopulated |
-| Inactive | $A_j(t) = 0$ | No birds present (downtime) |
+| State | Description |
+|-------|-------------|
+| $S$ (Susceptible) | Farm has birds present, not infected |
+| $I$ (Infected) | Farm infected, potentially infectious to others |
+| $R$ (Removed) | Farm culled or depopulated |
+| $A$ (Inactive) | No birds present (downtime) |
+
+For convenience, we also define indicator variables: $S_j(t) = \mathbf{1}[\text{State}_j(t) = S]$, etc.
 
 **Note**: "Infected" here means the farm has HPAI infection, not that it has been detected. Detection is an observation process.
 
@@ -42,6 +44,8 @@ Each farm $j$ at time $t$ is in one of:
 ---
 
 ## Transmission Processes
+
+**Time convention**: We use discrete time with $\Delta t = 1$ day. All hazards $\lambda_j(t)$ represent daily rates, and infection probability on day $t$ is $P(\text{infection}) = 1 - \exp(-\lambda_j(t))$.
 
 ### 1. Wild Bird Spillover
 
@@ -66,7 +70,7 @@ where $\epsilon$ is the peak daily spillover hazard and $\psi(t)$ captures the t
 
 **Prior for t₀**: Normal centred on day 10-15 (early December), with SD ~5 days to allow data to inform onset timing.
 
-**Identifiability note**: With binary HRZ, we estimate $\epsilon$ (peak spillover rate for HRZ farms) and cannot separately identify baseline wild bird pressure from HRZ membership. The onset t₀ is identified from the timing of first infections; the decay δ is identified from the declining proportion of spillover-attributable cases over time.
+**Identifiability note**: With binary HRZ, we estimate $\epsilon$ (peak spillover rate for HRZ farms). Non-HRZ spillover is assumed negligible and fixed at 0 for the initial model (narrative mentions "stragglers" but we treat this as second-order). The onset t₀ is identified from the timing of first infections; the decay δ is identified from the declining proportion of spillover-attributable cases over time.
 
 **Spatial alternatives** (for later consideration):
 - Binary HRZ + non-HRZ spillover: $\epsilon_{\text{HRZ}}$ and $\epsilon_{\text{non}}$ (narrative mentions "stragglers" outside HRZ)
@@ -98,10 +102,10 @@ where $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers
 
 Broiler_1 → broiler_2 movements can transmit infection via transport of infected birds.
 
-**Process**: If farm $i$ (broiler_1) is infectious and sends birds to farm $j$ (broiler_2):
-$$\text{hazard}_{\text{movement},j}(t) = p_{\text{mov}} \cdot w(t - T_i^I)$$
+**Process**: Let $M_{i \to j}(t)$ be an indicator for whether a movement from farm $i$ to farm $j$ occurs on day $t$. The movement hazard for farm $j$ is:
+$$\lambda_{\text{movement},j}(t) = \sum_{i: I_i(t)=1} M_{i \to j}(t) \cdot p_{\text{eff}}(i) \cdot w(t - T_i^I)$$
 
-where $p_{\text{mov}}$ is the per-movement transmission probability and $w(\tau)$ is the infectiousness profile.
+where $p_{\text{eff}}(i) = p_{\text{mov}} \cdot (1 - \sigma_{\text{test}})$ for HRZ sources (pre-shipment testing intercepts with probability $\sigma_{\text{test}} = 0.9$), and $p_{\text{eff}}(i) = p_{\text{mov}}$ otherwise.
 
 **Data**: 7,187 recorded movements (broiler_1 → broiler_2 only). Other movement types (to slaughter, equipment, personnel) are not recorded.
 
@@ -124,10 +128,10 @@ where $p_{\text{mov}}$ is the per-movement transmission probability and $w(\tau)
 
 Chickens and ducks may have different susceptibility to infection.
 
-**Process**: Modify force of infection by species:
-$$\lambda_j(t) = \beta_s \cdot (\lambda_j^{\text{spillover}}(t) + \lambda_j^{\text{local}}(t))$$
+**Process**: Modify total force of infection by species:
+$$\lambda_j(t) = \beta_s \cdot (\lambda_j^{\text{spillover}}(t) + \lambda_j^{\text{local}}(t) + \lambda_j^{\text{movement}}(t))$$
 
-where $\beta_s$ is species-specific:
+where $\beta_s$ is species-specific and applies to all acquisition pathways:
 - $\beta_{\text{chicken}} = 1$ (reference)
 - $\beta_{\text{duck}} \in (0, 1]$ (to be estimated)
 
@@ -151,12 +155,12 @@ The removal process is partially observed (cull dates in `cases.csv`) but is aff
 
 ### Reactive Culling
 
-Confirmed farms are culled. This is part observation (confirmation triggers culling) and part process (culling removes the farm).
+Confirmed farms are culled.
 
-**Process**: Once confirmed at $T_j^C$, farm is culled with delay $\delta_{\text{reactive}}$:
+**Modelling choice**: We treat confirmation times $T_j^C$ as observed inputs (from the observation model). Removal is then a deterministic process:
 $$T_j^R = T_j^C + \delta_{\text{reactive}}$$
 
-The delay may vary due to culling capacity constraints (reached 6 Jan).
+where $\delta_{\text{reactive}}$ is a fixed or estimated delay (median ~2 days from data, but longer during capacity constraints from 6 Jan).
 
 ### Preventive Culling
 
@@ -165,9 +169,11 @@ From 1 Jan, farms within 1km of confirmed cases are preventively culled.
 **Process**: If farm $j$ is within 1km of a confirmed farm and $j$ is susceptible:
 $$T_j^R = \max(T_{\text{trigger}}, T_{\text{capacity}})$$
 
-where $T_{\text{trigger}}$ is when the trigger case was confirmed and $T_{\text{capacity}}$ accounts for culling delays.
+where:
+- $T_{\text{trigger}}$ is when the trigger case was confirmed
+- $T_{\text{capacity}}$ is the earliest time culling resources are available, modelled as a deterministic queue delay based on backlog (fixed offset from 6 Jan when capacity was reached)
 
-**Note**: 77% of preventive cull dates are missing — must impute or model capacity constraints.
+**Note**: 77% of preventive cull dates are missing — impute as $T_{\text{trigger}} + \delta_{\text{prev}}$ where $\delta_{\text{prev}}$ is estimated from the 12 complete records.
 
 ### Zones
 
@@ -210,14 +216,14 @@ Process:
     hazard_spillover = ε × ψ(t)  if j ∈ HRZ, else 0
 
     # Local transmission (spatial kernel)
-    hazard_local = β × β_species[j] × Σ_i w(t - T_i^I) × K(d_ij)
+    hazard_local = β × Σ_i w(t - T_i^I) × K(d_ij)
 
     # Movement transmission (broiler_1 → broiler_2)
-    hazard_movement = Σ_movements p_mov × w(t - T_source^I) × (1 - σ_test)
-    # where σ_test = 0.9 for HRZ sources (pre-shipment testing), 0 otherwise
+    hazard_movement = Σ_{i: M_i→j(t)=1} p_eff(i) × w(t - T_i^I)
+    # where p_eff(i) = p_mov × (1 - σ_test) for HRZ sources, p_mov otherwise
 
-    # Total hazard
-    λ_j(t) = hazard_spillover + hazard_local + hazard_movement
+    # Total hazard (species modifier applies to all pathways)
+    λ_j(t) = β_species[j] × (hazard_spillover + hazard_local + hazard_movement)
 
     # Infection event
     P(infection at t) = 1 - exp(-λ_j(t))
