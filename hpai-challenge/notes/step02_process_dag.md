@@ -68,7 +68,7 @@ where $\epsilon$ is the peak daily spillover hazard and $\psi(t)$ captures the t
 
 **Decision**: Use **onset + decay** profile. This captures: (1) zero spillover before migration arrives (t₀), (2) peak at onset, (3) gradual decline as birds move on (δ). The first confirmed case (22 Dec) with back-calculated infection ~12-14 Dec suggests t₀ ≈ early December.
 
-**Prior for t₀**: Normal centred on day 10-15 (early December), with SD ~5 days to allow data to inform onset timing.
+**Prior for t₀**: Normal centred on 10–15 December 2025 (i.e., days 10–15 counting from 1 December), with SD ~5 days to allow data to inform onset timing.
 
 **Identifiability note**: With binary HRZ, we estimate $\epsilon$ (peak spillover rate for HRZ farms). Non-HRZ spillover is assumed negligible and fixed at 0 for the initial model (narrative mentions "stragglers" but we treat this as second-order). The onset t₀ is identified from the timing of first infections; the decay δ is identified from the declining proportion of spillover-attributable cases over time.
 
@@ -94,9 +94,9 @@ where:
 - Power law: $K(d) = (1 + d/\alpha)^{-\gamma}$
 - Cauchy: $K(d) = 1/(1 + (d/\alpha)^2)$
 
-**Infectiousness profile**: Farm infectiousness may increase over time as within-farm prevalence grows:
-$$w(\tau) = \min(1, \exp(r \cdot \tau))$$
-where $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers).
+**Infectiousness profile**: Farm infectiousness increases over time as within-farm prevalence grows:
+$$w(\tau) = 1 - \exp(-r \cdot \tau)$$
+where $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers). This starts at 0 when $\tau=0$ and saturates to 1.
 
 ### 3. Movement-Based Transmission
 
@@ -297,7 +297,7 @@ Structurally identifiable because:
 - ε: constant hazard applying only to HRZ farms
 - β: time-varying hazard depending on proximity to infected farms
 
-**Key diagnostic**: Infections outside the HRZ can only arise from local transmission (β). This identifies β, and ε is then identified from the excess HRZ risk.
+**Key diagnostic**: Infections outside the HRZ can arise from local transmission (β) or movement from infected farms (including HRZ sources). Since movement transmission uses fixed $p_{\text{mov}}$, non-HRZ infections primarily identify β, and ε is then identified from the excess HRZ risk.
 
 **Conditions for identification**:
 1. Some infections outside HRZ
