@@ -201,6 +201,7 @@ Parameters (estimated):
 Parameters (fixed):
   r       = within-farm growth rate (= 1.0/day from mortality ledgers)
   p_mov   = per-movement transmission probability (= 0.01)
+  σ_test  = pre-shipment testing sensitivity (= 0.9)
 
 States:
   S_j(t)  = farm j susceptible at t
@@ -215,11 +216,11 @@ Process:
     ψ(t) = 0 if t < t₀, else exp(-δ(t - t₀))
     hazard_spillover = ε × ψ(t)  if j ∈ HRZ, else 0
 
-    # Local transmission (spatial kernel)
-    hazard_local = β × Σ_i w(t - T_i^I) × K(d_ij)
+    # Local transmission (spatial kernel, sum over infected farms)
+    hazard_local = β × Σ_{i: I_i(t)=1} w(t - T_i^I) × K(d_ij)
 
-    # Movement transmission (broiler_1 → broiler_2)
-    hazard_movement = Σ_{i: M_i→j(t)=1} p_eff(i) × w(t - T_i^I)
+    # Movement transmission (broiler_1 → broiler_2, sum over infected sources with movements)
+    hazard_movement = Σ_{i: I_i(t)=1, M_i→j(t)=1} p_eff(i) × w(t - T_i^I)
     # where p_eff(i) = p_mov × (1 - σ_test) for HRZ sources, p_mov otherwise
 
     # Total hazard (species modifier applies to all pathways)
