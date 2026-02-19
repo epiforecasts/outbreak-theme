@@ -134,7 +134,7 @@ For each data source, consider:
 
 ## Summary: Data Flow
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        PRIMARY DATA                              │
 ├─────────────────────────────────────────────────────────────────┤
@@ -183,6 +183,7 @@ Before model fitting:
 4. **Impute prev_cull dates**: For 40 farms with missing dates, estimate based on:
    - Identify trigger case (confirmed farm within 1km)
    - Assign cull date = trigger_confirmation + delay (estimate delay from 12 complete records)
+   - **Fallback** (no confirmed farm within 1km): use nearest confirmed case regardless of distance; if multiple equidistant, use earliest confirmation date
 5. **Merge removals**: Combine reactive culls (from `cases.csv`) and preventive culls into single removal timeline
 6. **Movement network**: Build lookup for movements by date/source/destination
    - Filter to broiler_1 → broiler_2 movements only
