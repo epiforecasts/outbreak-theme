@@ -189,7 +189,7 @@ For the process DAG, zones primarily affect which farms can be preventively cull
 
 For initial model development, we propose a simplified process:
 
-```
+```text
 Parameters (estimated):
   ε       = peak spillover hazard (HRZ farms)
   t₀      = spillover onset time (early December)
@@ -238,7 +238,7 @@ Process:
 
 ## DAG Representation
 
-```
+```text
     PARAMETERS                      FIXED           COVARIATES
     [ε, t₀, δ]  [β, α]  [β_duck]    {p_mov, r}      {HRZ}  {species}  {location}
          |         |        |           |             |        |          |
