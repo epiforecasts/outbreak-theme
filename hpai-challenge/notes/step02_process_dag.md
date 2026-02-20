@@ -96,16 +96,19 @@ where:
 
 **Infectiousness profile**: Farm infectiousness increases over time as within-farm prevalence grows:
 $$w(\tau) = 1 - \exp(-r \cdot \tau)$$
-where $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers). This starts at 0 when $\tau=0$ and saturates to 1.
+where $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers). This starts at 0 when $\tau=0$ and saturates to 1. Note: $w(0) = 0$ provides a "soft" de facto latency — a farm infected on day $t$ contributes negligible hazard on that day, ramping up continuously thereafter. This is distinct from a "hard" latent period (see Complexity Option 1).
 
 ### 3. Movement-Based Transmission
 
 Broiler_1 → broiler_2 movements can transmit infection via transport of infected birds.
 
-**Process**: Let $M_{i \to j}(t)$ be an indicator for whether a movement from farm $i$ to farm $j$ occurs on day $t$. The movement hazard for farm $j$ is:
-$$\lambda_{\text{movement},j}(t) = \sum_{i: I_i(t)=1} M_{i \to j}(t) \cdot p_{\text{eff}}(i) \cdot w(t - T_i^I)$$
+**Process**: Let $M_{i \to j}(t) \in \{0,1,2,...\}$ be the number of movements from farm $i$ to farm $j$ on day $t$. The movement hazard for farm $j$ is:
+$$\lambda_{\text{movement},j}(t) = \sum_{i: I_i(t)=1} M_{i \to j}(t) \cdot p_{\text{eff}}(i,t) \cdot w(t - T_i^I)$$
 
-where $p_{\text{eff}}(i) = p_{\text{mov}} \cdot (1 - \sigma_{\text{test}})$ for HRZ sources (pre-shipment testing intercepts with probability $\sigma_{\text{test}} = 0.9$), and $p_{\text{eff}}(i) = p_{\text{mov}}$ otherwise.
+where $p_{\text{eff}}(i,t)$ incorporates both pre-shipment testing and zone-based blocking:
+- If farm $i$ is in a regulated zone at time $t$: $p_{\text{eff}}(i,t) = 0$ (movements blocked)
+- Else if farm $i$ is in HRZ: $p_{\text{eff}}(i,t) = p_{\text{mov}} \cdot (1 - \sigma_{\text{test}})$ (testing intercepts with probability $\sigma_{\text{test}} = 0.9$)
+- Else: $p_{\text{eff}}(i,t) = p_{\text{mov}}$
 
 **Data**: 7,187 recorded movements (broiler_1 → broiler_2 only). Other movement types (to slaughter, equipment, personnel) are not recorded.
 
@@ -131,9 +134,11 @@ Chickens and ducks may have different susceptibility to infection.
 **Process**: Modify total force of infection by species:
 $$\lambda_j(t) = \beta_s \cdot (\lambda_j^{\text{spillover}}(t) + \lambda_j^{\text{local}}(t) + \lambda_j^{\text{movement}}(t))$$
 
-where $\beta_s$ is species-specific and applies to all acquisition pathways:
+where $\beta_s$ (≡ `β_species[j]` in pseudocode) is species-specific:
 - $\beta_{\text{chicken}} = 1$ (reference)
 - $\beta_{\text{duck}} \in (0, 1]$ (to be estimated)
+
+**Biological caveat for spillover**: Applying $\beta_{\text{duck}}$ uniformly to spillover is contentious — ducks (waterfowl) might be *more* susceptible to wild-bird spillover than chickens. The constraint $\beta_{\text{duck}} \in (0, 1]$ assumes ducks are less susceptible overall, which may not hold for the spillover pathway. See Complexity Option 2 for relaxing this constraint.
 
 **Interpretation caveat**: $\beta_{\text{duck}}$ conflates true susceptibility with detectability (see `step01_research_questions.md`, Q3).
 
@@ -219,9 +224,10 @@ Process:
     # Local transmission (spatial kernel, sum over infected farms)
     hazard_local = β × Σ_{i: I_i(t)=1} w(t - T_i^I) × K(d_ij)
 
-    # Movement transmission (broiler_1 → broiler_2, sum over infected sources with movements)
-    hazard_movement = Σ_{i: I_i(t)=1, M_i→j(t)=1} p_eff(i) × w(t - T_i^I)
-    # where p_eff(i) = p_mov × (1 - σ_test) for HRZ sources, p_mov otherwise
+    # Movement transmission (broiler_1 → broiler_2, sum over infected sources)
+    hazard_movement = Σ_{i: I_i(t)=1} M_i→j(t) × p_eff(i,t) × w(t - T_i^I)
+    # where M_i→j(t) = number of movements from i to j on day t
+    # p_eff(i,t) = 0 if i in regulated zone, else p_mov×(1-σ_test) if i in HRZ, else p_mov
 
     # Total hazard (species modifier applies to all pathways)
     λ_j(t) = β_species[j] × (hazard_spillover + hazard_local + hazard_movement)
@@ -340,7 +346,7 @@ Ducks may be *more* infectious despite lower apparent susceptibility. The resear
 2. **Fixed movement transmission probability** — $p_{\text{mov}} = 0.01$ not estimated (confounded with spatial kernel)
 3. **Onset + decay spillover profile** — $\psi(t) = 0$ for $t < t_0$, then $\exp(-\delta(t - t_0))$; captures migration arrival and departure but not complex seasonal patterns
 4. **Binary HRZ** — spillover risk is HRZ vs non-HRZ (continuous distance-to-water preferred if feasible)
-5. **Instantaneous infection** — no explicit latent period at farm level (typically 1–3 days for HPAI)
+5. **No explicit latent state** — no separate S→E→I transition; the infectiousness profile $w(\tau)$ provides soft latency ($w(0)=0$, ramping up continuously)
 6. **Fixed within-farm growth rate** — $r = 1.0$/day from mortality ledgers
 7. **Species effect constrained to (0,1]** — assumes ducks less susceptible; literature is mixed
 
@@ -351,7 +357,7 @@ Ducks may be *more* infectious despite lower apparent susceptibility. The resear
 If the simplified model is insufficient:
 
 **High priority** (recommended before fitting):
-1. **Farm-level latent period** — add 1–2 day delay before farm becomes infectious: $w(\tau) = 0$ for $\tau < 1$
+1. **Hard latent period** — add explicit delay before farm becomes infectious: $w(\tau) = 0$ for $\tau < \tau_{\min}$ (e.g., $\tau_{\min} = 1$–2 days). This supplements the soft latency from $w(0)=0$ with a hard floor.
 2. **Bidirectional species effect** — allow $\beta_{\text{duck}} \in (0, 2]$ or use log-scale
 
 **Medium priority**:
