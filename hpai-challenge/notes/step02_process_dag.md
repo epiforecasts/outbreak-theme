@@ -138,7 +138,7 @@ where $\beta_s$ (≡ `β_species[j]` in pseudocode) is species-specific:
 - $\beta_{\text{chicken}} = 1$ (reference)
 - $\beta_{\text{duck}} \in (0, 1]$ (to be estimated)
 
-**Biological caveat for spillover**: Applying $\beta_{\text{duck}}$ uniformly to spillover is contentious — ducks (waterfowl) might be *more* susceptible to wild-bird spillover than chickens. The constraint $\beta_{\text{duck}} \in (0, 1]$ assumes ducks are less susceptible overall, which may not hold for the spillover pathway. See Complexity Option 2 for relaxing this constraint.
+**Provisional assumption for spillover**: Applying a single $\beta_{\text{duck}} \in (0, 1]$ uniformly to all pathways including $\lambda_j^{\text{spillover}}$ is provisional — ducks (waterfowl) might be *more* susceptible to wild-bird spillover than chickens, violating the (0, 1] constraint for that pathway. This simplification is adopted for the initial model; see Complexity Option 2 for pathway-specific modifiers or relaxed bounds.
 
 **Interpretation caveat**: $\beta_{\text{duck}}$ conflates true susceptibility with detectability (see `step01_research_questions.md`, Q3).
 
@@ -179,6 +179,8 @@ where:
 - $T_{\text{capacity}}$ is the earliest time culling resources are available, modelled as a deterministic queue delay based on backlog (fixed offset from 6 Jan when capacity was reached)
 
 **Note**: 77% of preventive cull dates are missing — impute as $T_{\text{trigger}} + \delta_{\text{prev}}$ where $\delta_{\text{prev}}$ is estimated from the 12 complete records.
+
+**Limitation**: $\delta_{\text{prev}}$ estimated from only 12 records carries substantial uncertainty that may bias estimates of β and culling effectiveness. Consider: (a) informative prior borrowing from reactive culling distribution, or (b) sensitivity analysis over plausible $\delta_{\text{prev}}$ range.
 
 ### Zones
 
@@ -301,8 +303,8 @@ The process DAG involves latent quantities that are not directly observed:
 ### ε vs β
 
 Structurally identifiable because:
-- ε: constant hazard applying only to HRZ farms
-- β: time-varying hazard depending on proximity to infected farms
+- ε: HRZ-only hazard with fixed spatial footprint (ε is constant amplitude; actual hazard = ε·ψ(t) where ψ(t) encodes temporal onset/decay via t₀ and δ)
+- β: proximity-dependent hazard varying with distance to infected farms
 
 **Key diagnostic**: Infections outside the HRZ can arise from local transmission (β) or movement from infected farms (including HRZ sources). Since movement transmission uses fixed $p_{\text{mov}}$, non-HRZ infections primarily identify β, and ε is then identified from the excess HRZ risk.
 
