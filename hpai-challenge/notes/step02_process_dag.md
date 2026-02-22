@@ -94,6 +94,8 @@ where:
 - Power law: $K(d) = (1 + d/\alpha)^{-\gamma}$
 - Cauchy: $K(d) = 1/(1 + (d/\alpha)^2)$
 
+**Decision**: Use **exponential** kernel $K(d) = \exp(-d/\alpha)$. Parsimonious (single scale parameter $\alpha$), and the reparameterisation $\beta_0 = \beta \cdot K(d_0)$ is straightforward. Power-law and Cauchy kernels are retained as complexity options.
+
 **Infectiousness profile**: Farm infectiousness increases over time as within-farm prevalence grows:
 $$w(\tau) = 1 - \exp(-r \cdot \tau)$$
 where $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers). This starts at 0 when $\tau=0$ and saturates to 1. Note: $w(0) = 0$ provides a "soft" de facto latency — a farm infected on day $t$ contributes negligible hazard on that day, ramping up continuously thereafter. This is distinct from a "hard" latent period (see Complexity Option 1).
