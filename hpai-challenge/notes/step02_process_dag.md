@@ -96,11 +96,11 @@ where:
 - Power law: $K(d) = (1 + d/\alpha)^{-\gamma}$
 - Cauchy: $K(d) = 1/(1 + (d/\alpha)^2)$
 
-**Decision**: Use **exponential** kernel $K(d) = \exp(-d/\alpha)$. Parsimonious (single scale parameter $\alpha$), and the reparameterisation $\beta_0 = \beta \cdot K(d_0)$ is straightforward. Power-law and Cauchy kernels are retained as complexity options.
+**Decision**: Use **Cauchy** kernel $K(d) = 1/(1 + (d/\alpha)^2)$. HPAI transmission literature consistently favours fat-tailed kernels: @Boender2007 fitted a Cauchy-type kernel ($\alpha \approx 2.1$ km) to the Netherlands H7N7 outbreak; @Meadows2023 found universal fat-tailed patterns across livestock epidemics; @Seymour2018 found sub-exponential tails for Minnesota H5N2. Fat tails better capture occasional long-range jumps via unrecorded pathways (wind, shared services) absorbed into the spatial kernel. The reparameterisation $\beta_0 = \beta \cdot K(d_0)$ applies equally. Exponential and power-law kernels are retained as alternatives for model comparison.
 
-**Infectiousness profile**: Farm infectiousness increases over time as within-farm prevalence grows:
-$$w(\tau) = 1 - \exp(-r \cdot \tau)$$
-where $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers). This starts at 0 when $\tau=0$ and saturates to 1. Note: $w(0) = 0$ provides a "soft" de facto latency — a farm infected on day $t$ contributes negligible hazard on that day, ramping up continuously thereafter. This is distinct from a "hard" latent period (see Complexity Option 1).
+**Infectiousness profile**: Farm infectiousness increases over time as within-farm prevalence grows, with a hard latent period before any between-farm transmission is possible:
+$$w(\tau) = \begin{cases} 0 & \text{if } \tau < \tau_{\min} \\ 1 - \exp(-r \cdot (\tau - \tau_{\min})) & \text{if } \tau \geq \tau_{\min} \end{cases}$$
+where $\tau_{\min} = 1$ day is the minimum latent period and $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers). The hard latent period reflects that within-flock spread must occur before a farm generates sufficient environmental contamination for between-farm transmission (@Rasamoelina2023 report latent periods consistently <2 days across HPAI subtypes). After $\tau_{\min}$, infectiousness ramps up and saturates to 1.
 
 ### 3. Movement-Based Transmission
 
@@ -141,9 +141,9 @@ $$\lambda_j(t) = \beta_s \cdot (\lambda_j^{\text{spillover}}(t) + \lambda_j^{\te
 
 where $\beta_s$ (≡ `β_species[j]` in pseudocode) is species-specific:
 - $\beta_{\text{chicken}} = 1$ (reference)
-- $\beta_{\text{duck}} \in (0, 1]$ (to be estimated)
+- $\beta_{\text{duck}} \in (0, 2]$ (to be estimated)
 
-**Provisional assumption for spillover**: Applying a single $\beta_{\text{duck}} \in (0, 1]$ uniformly to all pathways including $\lambda_j^{\text{spillover}}$ is provisional — ducks (waterfowl) might be *more* susceptible to wild-bird spillover than chickens, violating the (0, 1] constraint for that pathway. This simplification is adopted for the initial model; see Complexity Option 2 for pathway-specific modifiers or relaxed bounds.
+**Rationale for bidirectional bound**: Ducks may be either more or less susceptible to infection than chickens depending on the pathway. Ducks are generally more resistant to HPAI *mortality* (@Smith2015 — chickens lack the RIG-I innate immune receptor), but may be *more* susceptible to *infection*, particularly via wild-bird spillover since they share aquatic habitats with migratory waterfowl. The (0, 2] bound allows the data to inform direction. See @Pantin-Jackwood2013 for strain-dependent species differences.
 
 **Interpretation caveat**: $\beta_{\text{duck}}$ conflates true susceptibility with detectability (see `step01_research_questions.md`, Q3).
 
@@ -211,10 +211,11 @@ Parameters (estimated):
   β       = farm-to-farm transmission rate
   α       = spatial kernel scale
   β_duck  = relative susceptibility of ducks
-              Prior: Beta(2,2) on (0,1] (weakly informative, symmetric)
-              Fallback: if posterior is prior-dominated, treat as scenario parameter (fixed per run: 1.0, 0.5, 0.25)
+              Prior: LogNormal(0, 0.5) truncated to (0,2] (centred at 1, allows either direction)
+              Fallback: if posterior is prior-dominated, treat as scenario parameter (fixed per run: 0.5, 1.0, 1.5)
 
 Parameters (fixed):
+  τ_min   = hard latent period (= 1 day; within-flock spread before between-farm transmission)
   r       = within-farm growth rate (= 1.0/day from mortality ledgers)
   p_mov   = per-movement transmission probability (= 0.01)
   σ_test  = pre-shipment testing sensitivity (= 0.9)
@@ -237,7 +238,7 @@ Process:
     hazard_spillover = ε × ψ(t)  if j ∈ HRZ, else 0
 
     # Within-farm infectiousness (shared by local and movement pathways)
-    w(τ) = 1 - exp(-r × τ)   # starts at 0, saturates to 1
+    w(τ) = 0 if τ < τ_min, else 1 - exp(-r × (τ - τ_min))   # hard latent period, then saturates to 1
 
     # Local transmission (spatial kernel, sum over infected farms)
     hazard_local = β × Σ_{i: I_i(t)=1} w(t - T_i^I) × K(d_ij)
@@ -317,7 +318,7 @@ The process DAG involves latent quantities that are not directly observed:
 | δ (decay) | Weak | Identified from declining proportion of spillover cases over time; jointly correlated with t₀ (see note below) |
 | β (transmission) | Conditional | Identified from non-HRZ cases + spatial-temporal clustering |
 | α (kernel scale) | Weak | Reparameterize: estimate β₀ = β·K(d₀) and α separately |
-| β_duck (species) | **Weak** | Conflates susceptibility, infectiousness, and detectability; weakly informative prior Beta(2,2) on (0,1]. If posterior is prior-dominated, fall back to scenario analysis (fixed β_duck ∈ {1.0, 0.5, 0.25}) |
+| β_duck (species) | **Weak** | Conflates susceptibility, infectiousness, and detectability; LogNormal(0, 0.5) prior on (0,2]. If posterior is prior-dominated, fall back to scenario analysis (fixed β_duck ∈ {0.5, 1.0, 1.5}) |
 | r (growth rate) | Fixed | Set from mortality ledger data (= 1.0/day) |
 | p_mov (movement) | Fixed | Set from literature (= 0.01); not identifiable, confounded with spatial kernel |
 
@@ -378,9 +379,9 @@ Ducks may be *more* infectious despite lower apparent susceptibility. The resear
 2. **Fixed movement transmission probability** — $p_{\text{mov}} = 0.01$ not estimated (confounded with spatial kernel)
 3. **Onset + decay spillover profile** — $\psi(t) = 0$ for $t < t_0$, then $\exp(-\delta(t - t_0))$; captures migration arrival and departure but not complex seasonal patterns
 4. **Binary HRZ** — spillover risk is HRZ vs non-HRZ (continuous distance-to-water preferred if feasible)
-5. **No explicit latent state** — no separate S→E→I transition; the infectiousness profile $w(\tau)$ provides soft latency ($w(0)=0$, ramping up continuously)
+5. **Hard latent period via infectiousness profile** — $w(\tau) = 0$ for $\tau < \tau_{\min}$ (1 day), then ramp-up; no separate S→E→I compartment
 6. **Fixed within-farm growth rate** — $r = 1.0$/day from mortality ledgers
-7. **Species effect constrained to (0,1]** — assumes ducks less susceptible; literature is mixed
+7. **Single species modifier across pathways** — $\beta_{\text{duck}} \in (0, 2]$ applied uniformly; pathway-specific modifiers deferred
 
 ---
 
@@ -389,8 +390,8 @@ Ducks may be *more* infectious despite lower apparent susceptibility. The resear
 If the simplified model is insufficient:
 
 **High priority** (recommended before fitting):
-1. **Hard latent period** — add explicit delay before farm becomes infectious: $w(\tau) = 0$ for $\tau < \tau_{\min}$ (e.g., $\tau_{\min} = 1$–2 days). This supplements the soft latency from $w(0)=0$ with a hard floor.
-2. **Bidirectional species effect** — allow $\beta_{\text{duck}} \in (0, 2]$ or use log-scale
+1. **Longer latent period** — increase $\tau_{\min}$ from 1 to 2 days, or estimate $\tau_{\min}$ from data if sufficient information exists.
+2. **Pathway-specific species effect** — separate $\beta_{\text{duck}}^{\text{spillover}}$, $\beta_{\text{duck}}^{\text{local}}$, $\beta_{\text{duck}}^{\text{movement}}$ if a single modifier is insufficient
 
 **Medium priority**:
 3. **Continuous spillover risk** — distance to wetlands instead of binary HRZ (using `clc_32626.geojson`)
