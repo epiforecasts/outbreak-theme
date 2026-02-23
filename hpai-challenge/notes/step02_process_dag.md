@@ -124,6 +124,7 @@ where $p_{\text{eff}}(i,t)$ incorporates both pre-shipment testing and zone-base
 - Pre-shipment testing in HRZ intercepts infectious farms with probability $\sigma_{\text{test}}$ (assume 0.9)
 - Movements from farms in regulated zones are blocked
 - Effective probability: $p_{\text{eff}} = p_{\text{mov}} \cdot (1 - \sigma_{\text{test}})$ for HRZ sources
+- Otherwise (non-HRZ, non-regulated source): $p_{\text{eff}} = p_{\text{mov}}$ (no modification)
 
 **Decision**: Include movement transmission with **fixed $p_{\text{mov}} = 0.01$**. This is mechanistically correct and computationally cheap. The parameter may not be identifiable (confounded with spatial kernel for nearby farm pairs), but including it avoids misattributing movement transmission to the spatial kernel. Sensitivity analysis can vary $p_{\text{mov}}$ over a plausible range.
 
@@ -168,6 +169,8 @@ Confirmed farms are culled.
 $$T_j^R = T_j^C + \delta_{\text{reactive}}$$
 
 where $\delta_{\text{reactive}}$ is a fixed or estimated delay (median ~2 days from data, but longer during capacity constraints from 6 Jan).
+
+**Limitation**: A single $\delta_{\text{reactive}}$ averages over pre- and post-capacity-constraint periods, potentially underestimating infectious periods during high incidence (post-6 Jan) and inflating $\beta$. A time-varying $\delta_{\text{reactive}}(t)$ or explicit capacity model (analogous to the preventive culling treatment) could address this; see Complexity Option 4.
 
 ### Preventive Culling
 
