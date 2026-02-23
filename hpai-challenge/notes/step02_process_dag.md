@@ -208,6 +208,8 @@ Parameters (estimated):
   ε       = peak spillover hazard (HRZ farms)
   t₀      = spillover onset time (early December)
   δ       = spillover decay rate after onset
+              Prior: Exponential(mean = 1/30 per day), i.e. τ_half = ln2/δ ~ 20 days
+              (weakly informative; anchors the t₀–δ ridge; see identifiability note)
   β       = farm-to-farm transmission rate
   α       = spatial kernel scale
   β_duck  = relative susceptibility of ducks
@@ -262,6 +264,8 @@ Process:
     T_j^R = max(T_trigger, T_capacity)
     # where T_trigger = confirmation time of trigger case
     # T_capacity = earliest available culling slot (deterministic queue delay)
+    # Precedence: if farm j transitions S→I before scheduled preventive T_j^R,
+    #   cancel preventive schedule; treat as reactive case (T_j^R = T_j^C + δ_reactive)
 ```
 
 ---
