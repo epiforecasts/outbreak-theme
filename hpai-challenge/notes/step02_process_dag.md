@@ -206,12 +206,16 @@ For initial model development, we propose a simplified process:
 ```text
 Parameters (estimated):
   ε       = peak spillover hazard (HRZ farms)
-  t₀      = spillover onset time (early December)
+              Prior: Exponential(mean = 0.1)  (weakly informative; refine from pilot run)
+  t₀      = spillover onset time
+              Prior: Normal(mean ≈ day 12, SD = 5) counting from 1 Dec 2025 (i.e. centred on 10–15 December)
   δ       = spillover decay rate after onset
               Prior: Exponential(mean = 1/30 per day), i.e. τ_half = ln2/δ ~ 20 days
               (weakly informative; anchors the t₀–δ ridge; see identifiability note)
   β       = farm-to-farm transmission rate
-  α       = spatial kernel scale
+              Prior: Exponential(mean = 0.1)  (weakly informative; see α–β identifiability note)
+  α       = spatial kernel scale (km)
+              Prior: LogNormal(log(2), 1)  (median ≈ 2 km; broad enough for data to inform)
   β_duck  = relative susceptibility of ducks
               Prior: LogNormal(0, 0.5) truncated to (0,2] (centred at 1, allows either direction)
               Fallback: if posterior is prior-dominated, treat as scenario parameter (fixed per run: 0.5, 1.0, 1.5)
@@ -273,7 +277,7 @@ Process:
 
 ```text
     PARAMETERS                      FIXED           COVARIATES                       DATA
-    [ε, t₀, δ]  [β, α]  [β_duck]    {p_mov, r}      {HRZ}  {species}  {location}   {M_{i→j}(t): movements}
+    [ε, t₀, δ]  [β, α]  [β_duck]    {p_mov, r, τ_min, σ_test}      {HRZ}  {species}  {location}   {M_{i→j}(t): movements}
          |         |        |           |             |        |          |                  |
          v         v        v           v             v        v          v                  v
     (Spillover) + (Local transmission) + (Movement transmission) ←---------
@@ -295,7 +299,7 @@ Process:
 - `{Curly braces}`: fixed covariates or fixed parameters (observed or set from literature)
 - `(Parentheses)`: processes/transformations
 
-**Key distinction**: HRZ and species are covariates that modify how parameters act, not parameters themselves. We estimate ε (peak spillover rate), t₀ (spillover onset), δ (spillover decay), β (transmission rate), α (kernel scale), and β_duck (relative susceptibility). Movement transmission probability p_mov is fixed at 0.01 based on literature (mechanistically important but not identifiable from these data).
+**Key distinction**: HRZ and species are covariates that modify how parameters act, not parameters themselves. We estimate ε (peak spillover rate), t₀ (spillover onset), δ (spillover decay), β (transmission rate), α (kernel scale), and β_duck (relative susceptibility). Movement transmission probability p_mov is fixed at 0.01 based on literature (mechanistically important but not identifiable from these data). Other fixed inputs: τ_min (hard latent period), r (within-farm growth rate), and σ_test (pre-shipment testing sensitivity).
 
 ---
 
