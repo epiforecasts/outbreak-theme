@@ -215,6 +215,10 @@ Parameters (fixed):
   p_mov   = per-movement transmission probability (= 0.01)
   σ_test  = pre-shipment testing sensitivity (= 0.9)
 
+Parameters (imputed / estimated from data summaries):
+  δ_reactive = confirmation-to-removal delay for reactive culling (median ~2 days from cases.csv)
+  δ_prev     = trigger-to-removal delay for preventive culling (estimated from 12 complete records; see limitation note)
+
 States:
   S_j(t)  = farm j susceptible at t
   I_j(t)  = farm j infected at t
@@ -298,12 +302,21 @@ The process DAG involves latent quantities that are not directly observed:
 |--------------|---------------|-------|
 | ε (spillover) | Conditional | Requires non-HRZ infections; early outbreak confounded with β |
 | t₀ (onset) | Conditional | Identified from timing of first infections; prior centred on early December |
-| δ (decay) | Weak | Identified from declining proportion of spillover cases over time |
+| δ (decay) | Weak | Identified from declining proportion of spillover cases over time; jointly correlated with t₀ (see note below) |
 | β (transmission) | Conditional | Identified from non-HRZ cases + spatial-temporal clustering |
 | α (kernel scale) | Weak | Reparameterize: estimate β₀ = β·K(d₀) and α separately |
 | β_duck (species) | **No** | Conflates susceptibility, infectiousness, and detectability |
 | r (growth rate) | Fixed | Set from mortality ledger data (= 1.0/day) |
 | p_mov (movement) | Fixed | Set from literature (= 0.01); not identifiable, confounded with spatial kernel |
+
+### t₀ vs δ (joint identifiability)
+
+Under the onset+decay profile $\psi(t) = \exp(-\delta(t - t_0))$, the parameters t₀ and δ are inherently correlated: a later t₀ with slower δ can produce a similar spillover time-series to an earlier t₀ with faster δ, creating a ridge-shaped likelihood surface. With limited early-outbreak observations, this may cause poor MCMC mixing and inflated marginal uncertainties.
+
+**Mitigations**:
+- Reparameterise to $(t_0, \tau_{\text{half}} = \ln 2 / \delta)$, which is more interpretable and partially orthogonalises the parameterisation
+- Profile the joint likelihood for $(t_0, \delta)$ before full inference to diagnose the ridge empirically
+- Informative priors on t₀ (centred on early December) help anchor one end of the ridge
 
 ### ε vs β
 
