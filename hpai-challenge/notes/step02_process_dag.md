@@ -236,6 +236,9 @@ Process:
     ψ(t) = 0 if t < t₀, else exp(-δ(t - t₀))
     hazard_spillover = ε × ψ(t)  if j ∈ HRZ, else 0
 
+    # Within-farm infectiousness (shared by local and movement pathways)
+    w(τ) = 1 - exp(-r × τ)   # starts at 0, saturates to 1
+
     # Local transmission (spatial kernel, sum over infected farms)
     hazard_local = β × Σ_{i: I_i(t)=1} w(t - T_i^I) × K(d_ij)
 
@@ -250,9 +253,14 @@ Process:
     # Infection event
     P(infection at t) = 1 - exp(-λ_j(t))
 
-  For each infected farm j:
-    # Removal (culling) - modelled separately
-    T_j^R = T_j^C + delay  (depends on observation)
+  For each confirmed infected farm j (reactive culling):
+    T_j^R = T_j^C + δ_reactive
+
+  For each susceptible farm j within 1 km of a confirmed farm (preventive culling, from 1 Jan):
+    # S → R directly, bypassing I
+    T_j^R = max(T_trigger, T_capacity)
+    # where T_trigger = confirmation time of trigger case
+    # T_capacity = earliest available culling slot (deterministic queue delay)
 ```
 
 ---
