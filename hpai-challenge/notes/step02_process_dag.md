@@ -33,6 +33,8 @@ Each farm $j$ at time $t$ is in exactly one state $\text{State}_j(t) \in \{S, I,
 
 For convenience, we also define indicator variables: $S_j(t) = \mathbf{1}[\text{State}_j(t) = S]$, etc.
 
+**Transition note**: $A$ is treated as a static covariate — farms in downtime at the start of the modelled period remain inactive throughout and are excluded from $S \to I \to R$ dynamics. Restocking (A → S) is not modelled.
+
 **Note**: "Infected" here means the farm has HPAI infection, not that it has been detected. Detection is an observation process.
 
 ### Aggregate states (derived)
@@ -126,7 +128,7 @@ where $p_{\text{eff}}(i,t)$ incorporates both pre-shipment testing and zone-base
 - Effective probability: $p_{\text{eff}} = p_{\text{mov}} \cdot (1 - \sigma_{\text{test}})$ for HRZ sources
 - Otherwise (non-HRZ, non-regulated source): $p_{\text{eff}} = p_{\text{mov}}$ (no modification)
 
-**Decision**: Include movement transmission with **fixed $p_{\text{mov}} = 0.01$**. This is mechanistically correct and computationally cheap. The parameter may not be identifiable (confounded with spatial kernel for nearby farm pairs), but including it avoids misattributing movement transmission to the spatial kernel. Sensitivity analysis can vary $p_{\text{mov}}$ over a plausible range.
+**Decision**: Include movement transmission with **fixed $p_{\text{mov}} = 0.01$** (expert assumption — calibrated so that at typical movement volumes the movement pathway contributes a share broadly consistent with @Yoo2021's ~30% attribution for Korean H5N6; the cited study reports population-level attribution, not a per-movement probability). Sensitivity analysis should vary $p_{\text{mov}}$ over [0.001, 0.05]. The parameter may not be identifiable (confounded with spatial kernel for nearby farm pairs), but including it avoids misattributing movement transmission to the spatial kernel.
 
 **Limitation**: Only broiler_1 → broiler_2 movements are recorded. Other transmission via shared equipment, personnel, or feed trucks is absorbed into the spatial kernel.
 
@@ -209,6 +211,8 @@ Parameters (estimated):
   β       = farm-to-farm transmission rate
   α       = spatial kernel scale
   β_duck  = relative susceptibility of ducks
+              Prior: Beta(2,2) on (0,1] (weakly informative, symmetric)
+              Fallback: if posterior is prior-dominated, treat as scenario parameter (fixed per run: 1.0, 0.5, 0.25)
 
 Parameters (fixed):
   r       = within-farm growth rate (= 1.0/day from mortality ledgers)
@@ -256,11 +260,11 @@ Process:
 ## DAG Representation
 
 ```text
-    PARAMETERS                      FIXED           COVARIATES
-    [ε, t₀, δ]  [β, α]  [β_duck]    {p_mov, r}      {HRZ}  {species}  {location}
-         |         |        |           |             |        |          |
-         v         v        v           v             v        v          v
-    (Spillover) + (Local transmission) + (Movement transmission)
+    PARAMETERS                      FIXED           COVARIATES                       DATA
+    [ε, t₀, δ]  [β, α]  [β_duck]    {p_mov, r}      {HRZ}  {species}  {location}   {M_{i→j}(t): movements}
+         |         |        |           |             |        |          |                  |
+         v         v        v           v             v        v          v                  v
+    (Spillover) + (Local transmission) + (Movement transmission) ←---------
           \              |                    /
            \             |                   /
             \            v                  /
@@ -305,7 +309,7 @@ The process DAG involves latent quantities that are not directly observed:
 | δ (decay) | Weak | Identified from declining proportion of spillover cases over time; jointly correlated with t₀ (see note below) |
 | β (transmission) | Conditional | Identified from non-HRZ cases + spatial-temporal clustering |
 | α (kernel scale) | Weak | Reparameterize: estimate β₀ = β·K(d₀) and α separately |
-| β_duck (species) | **No** | Conflates susceptibility, infectiousness, and detectability |
+| β_duck (species) | **Weak** | Conflates susceptibility, infectiousness, and detectability; weakly informative prior Beta(2,2) on (0,1]. If posterior is prior-dominated, fall back to scenario analysis (fixed β_duck ∈ {1.0, 0.5, 0.25}) |
 | r (growth rate) | Fixed | Set from mortality ledger data (= 1.0/day) |
 | p_mov (movement) | Fixed | Set from literature (= 0.01); not identifiable, confounded with spatial kernel |
 
@@ -399,7 +403,7 @@ If the simplified model is insufficient:
 |----------|-------------------------------|
 | Q1 | None (descriptive) |
 | Q2 | Full process: spillover + local transmission + removal |
-| Q3 | Species-specific susceptibility ($\beta_{\text{duck}}$) |
+| Q3 | Species-specific susceptibility ($\beta_{\text{duck}}$): posterior estimate if identifiable, otherwise scenario comparison |
 | Q4 | Preventive culling process (modify intervention rules) |
 | Q5 | Reactive culling delays (modify $\delta_{\text{reactive}}$) |
 
