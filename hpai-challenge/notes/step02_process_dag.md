@@ -183,9 +183,9 @@ $$T_j^R = \max(T_{\text{trigger}}, T_{\text{capacity}})$$
 
 where:
 - $T_{\text{trigger}}$ is when the trigger case was confirmed
-- $T_{\text{capacity}}$ is the earliest time culling resources are available, modelled as a deterministic queue delay based on backlog (fixed offset from 6 Jan when capacity was reached)
+- $T_{\text{capacity}} = T_{\text{trigger}} + \delta_{\text{prev}}$, i.e. the capacity delay is modelled via $\delta_{\text{prev}}$ (estimated from the 12 complete records). Since $T_j^R = \max(T_{\text{trigger}}, T_{\text{trigger}} + \delta_{\text{prev}}) = T_{\text{trigger}} + \delta_{\text{prev}}$ when $\delta_{\text{prev}} \geq 0$, the process simplifies to $T_j^R = T_{\text{trigger}} + \delta_{\text{prev}}$
 
-**Note**: 77% of preventive cull dates are missing — impute as $T_{\text{trigger}} + \delta_{\text{prev}}$ where $\delta_{\text{prev}}$ is estimated from the 12 complete records.
+**Note**: 77% of preventive cull dates are missing — imputed using the same $\delta_{\text{prev}}$ parameter.
 
 **Limitation**: $\delta_{\text{prev}}$ estimated from only 12 records carries substantial uncertainty that may bias estimates of β and culling effectiveness. Consider: (a) informative prior borrowing from reactive culling distribution, or (b) sensitivity analysis over plausible $\delta_{\text{prev}}$ range.
 
@@ -261,9 +261,8 @@ Process:
 
   For each susceptible farm j within 1 km of a confirmed farm (preventive culling, from 1 Jan):
     # S → R directly, bypassing I
-    T_j^R = max(T_trigger, T_capacity)
+    T_j^R = T_trigger + δ_prev
     # where T_trigger = confirmation time of trigger case
-    # T_capacity = earliest available culling slot (deterministic queue delay)
     # Precedence: if farm j transitions S→I before scheduled preventive T_j^R,
     #   cancel preventive schedule; treat as reactive case (T_j^R = T_j^C + δ_reactive)
 ```
