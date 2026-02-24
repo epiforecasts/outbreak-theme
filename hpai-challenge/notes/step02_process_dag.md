@@ -60,7 +60,7 @@ $$\text{hazard}_{\text{spillover},j}(t) = \begin{cases} \phi_{\text{hrz}} \cdot 
 
 where $\phi_{\text{hrz}}$ and $\phi_{\text{non}}$ are the spillover rate scalars for HRZ and non-HRZ farms respectively, and $\psi(t)$ is a flexible temporal profile estimated from the data.
 
-**Temporal profile — spline with seasonal prior**: Rather than imposing a rigid parametric form (onset+decay, Gaussian pulse), we model $\psi(t)$ as a smooth function using a cubic B-spline basis with a second-order random walk prior on the coefficients:
+**Temporal profile — spline with seasonal prior**: We model $\psi(t)$ as a smooth function using a cubic B-spline basis with a second-order random walk prior on the coefficients:
 
 $$\log \psi(t) = \sum_{k=1}^{K} b_k B_k(t)$$
 
