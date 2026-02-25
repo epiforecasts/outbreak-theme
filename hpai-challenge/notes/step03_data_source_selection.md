@@ -97,7 +97,7 @@ For each data source, consider:
 2. Impute dates based on trigger case timing + delay
 3. Model culling queue explicitly
 
-**Decision**: Option 2 — impute missing dates as trigger_date + median_delay. Median delay estimated from the 12 records with dates.
+**Decision**: Option 2 — impute missing dates as $T_{\text{trigger}} + \delta_{\text{prev}}$, where $T_{\text{trigger}}$ is the confirmation date of the trigger case (confirmed farm within 1 km) and $\delta_{\text{prev}}$ is the median trigger-to-cull delay estimated from the 12 complete records.
 
 ### 6. Movements (`movement.csv`) — INCLUDED (fixed parameter)
 
@@ -128,7 +128,7 @@ For each data source, consider:
 **Rationale**:
 - n=3 insufficient to estimate with uncertainty
 - Consistent pattern across 3 farms (2 chicken, 1 duck)
-- Affects infectiousness profile $w(\tau) = \exp(r\tau)$
+- Affects infectiousness profile $w(\tau) = 1 - \exp(-r \cdot (\tau - \tau_{\min}))$ for $\tau \geq \tau_{\min}$
 
 ---
 
@@ -180,10 +180,10 @@ Before model fitting:
 1. **Spatial join**: Assign HRZ indicator to each farm using `hrz_32626.geojson`
 2. **Distance matrix**: Compute pairwise distances between all 9,160 farms
 3. **Activity lookup**: Build function to query $A_j(t)$ for any farm/day
-4. **Impute prev_cull dates**: For 40 farms with missing dates, estimate based on:
-   - Identify trigger case (confirmed farm within 1km)
-   - Assign cull date = trigger_confirmation + delay (estimate delay from 12 complete records)
-   - **Fallback** (no confirmed farm within 1km): use nearest confirmed case regardless of distance; if multiple equidistant, use earliest confirmation date
+4. **Impute prev_cull dates**: For 40 farms with missing dates:
+   - Identify trigger case (confirmed farm within 1 km)
+   - Assign cull date = $T_{\text{trigger}} + \delta_{\text{prev}}$ (where $\delta_{\text{prev}}$ is the median delay from 12 complete records)
+   - **Fallback** (no confirmed farm within 1 km): use nearest confirmed case regardless of distance; if multiple equidistant, use earliest confirmation date
 5. **Merge removals**: Combine reactive culls (from `cases.csv`) and preventive culls into single removal timeline
 6. **Movement network**: Build lookup for movements by date/source/destination
    - Filter to broiler_1 → broiler_2 movements only
@@ -196,17 +196,20 @@ Before model fitting:
 
 | Parameter | Estimate/Fix | Rationale |
 |-----------|--------------|-----------|
-| ε (peak spillover rate) | Estimate | Key process parameter |
-| t₀ (spillover onset) | Estimate | Identified from timing of first infections; prior ~early December |
-| δ (spillover decay) | Estimate | Identified from declining HRZ proportion over time |
+| φ (HRZ spillover rate) | Estimate | Key process parameter; LogNormal(log(0.01), 2) prior |
+| η (non-HRZ reduction) | Estimate | φ_non = φ × η; Beta(1, 5) prior |
+| t_change (spillover changepoint) | Estimate | Identified from changing HRZ/non-HRZ case ratio; Normal(31, SD=10) prior (t=0 ≡ 1 Dec 2025) |
+| ρ (post-change intensity) | Estimate | Identified from HRZ excess in second period; Beta(2, 5) prior |
 | β₀ (transmission at d₀) | Estimate | Compound parameter β·K(d₀); well-identified |
 | α (kernel scale) | Estimate | Decay scale; identified from spatial pattern |
-| β_duck (species susceptibility) | Estimate | Q3 target (interpret with caution) |
+| β_duck (species susceptibility) | Estimate | Q3 target (interpret with caution); LogNormal(0, 0.5) on (0,2] |
 | r (within-farm growth) | Fix = 1.0/day | n=3 data, consistent pattern |
+| τ_min (hard latent period) | Fix = 1 day | Within-flock spread before between-farm transmission |
 | p_mov (movement transmission) | Fix = 0.01 | Confounded with spatial kernel; @Yoo2021 suggests ~30% via movement |
+| σ_test (pre-shipment sensitivity) | Fix = 0.9 | Pre-shipment testing intercept probability |
 | Detection delay distribution | Estimate or fix | From date_suspicious → date_confirmed |
 
-**Note**: β is derived as β = β₀/K(d₀) where d₀ is a reference distance (e.g., median inter-farm distance).
+**Note**: β is derived as β = β₀/K(d₀) where d₀ is a reference distance (e.g., median inter-farm distance). See `step02_process_dag.md` for full parameter specifications and priors.
 
 ---
 
