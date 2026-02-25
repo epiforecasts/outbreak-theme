@@ -68,7 +68,7 @@ where $\phi$ is the spillover rate for HRZ farms, $\eta \in (0, 1)$ is the non-H
 
 $$\psi(t) = \begin{cases} 1 & \text{if } t \leq t_{\text{change}} \\ \rho & \text{if } t > t_{\text{change}} \end{cases}$$
 
-where $t_{\text{change}}$ is the changepoint (estimated) and $\rho \in (0, 1]$ is the relative spillover intensity in the second period. The first period is the reference ($\psi = 1$), so $\phi$ represents the HRZ spillover rate during the early high-pressure phase.
+where $t_{\text{change}}$ is the changepoint (estimated) and $\rho \in (0, 1)$ is the relative spillover intensity in the second period. The first period is the reference ($\psi = 1$), so $\phi$ represents the HRZ spillover rate during the early high-pressure phase.
 
 **Rationale**: No external wild bird surveillance data are available for Jolly Island. With 103 cases over 44 days, the data cannot resolve a detailed temporal profile. A two-piece model captures the key feature — spillover pressure was higher early in the outbreak (migration arrival) and declined later — without over-parameterising. The narrative ("wild birds migrate in early winter with stragglers seen through February") supports a declining profile but not a specific shape.
 
@@ -383,7 +383,7 @@ Ducks may be *more* infectious despite lower apparent susceptibility. The resear
 
 The changepoint time and post-change intensity are jointly weakly identified: a later $t_{\text{change}}$ with $\rho \approx 1$ (near-constant profile) produces a similar cumulative spillover hazard to an earlier $t_{\text{change}}$ with smaller $\rho$ (steeper decline). This is a likelihood ridge analogous to the general $(t_0, \delta)$ trade-off in onset-decay models.
 
-**Mitigation**: The priors on both parameters are informative — $t_{\text{change}} \sim \text{Normal}(1\text{ Jan}, \text{SD}=10)$ and $\rho \sim \text{Beta}(2,2)$ — which regularise the ridge. Practical identifiability depends on whether the data span both temporal regions with sufficient HRZ/non-HRZ contrast. Simulation-based calibration should verify that posterior credible intervals narrow relative to the prior.
+**Mitigation**: The priors on both parameters are informative — $t_{\text{change}} \sim \text{Normal}(1\text{ Jan}, \text{SD}=10)$ and $\rho \sim \text{Beta}(2,5)$ — which regularise the ridge. The asymmetric $\rho$ prior additionally constrains the ridge from below by concentrating mass on substantial decline ($\text{mean} \approx 0.29$). Practical identifiability depends on whether the data span both temporal regions with sufficient HRZ/non-HRZ contrast. Simulation-based calibration should verify that posterior credible intervals narrow relative to the prior.
 
 ---
 
