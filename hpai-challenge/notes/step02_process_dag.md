@@ -1,3 +1,7 @@
+---
+bibliography: references.bib
+---
+
 # Process DAG
 
 This document develops the process DAG — a representation of the latent transmission process that generates HPAI infections on Jolly Island farms.
