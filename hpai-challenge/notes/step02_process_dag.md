@@ -100,7 +100,7 @@ where:
 
 **Infectiousness profile**: Farm infectiousness increases over time as within-farm prevalence grows, with a hard latent period before any between-farm transmission is possible:
 $$w(\tau) = \begin{cases} 0 & \text{if } \tau < \tau_{\min} \\ 1 - \exp(-r \cdot (\tau - \tau_{\min})) & \text{if } \tau \geq \tau_{\min} \end{cases}$$
-where $\tau_{\min} = 1$ day is the minimum latent period and $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers). The hard latent period reflects that within-flock spread must occur before a farm generates sufficient environmental contamination for between-farm transmission (latent periods consistently <2 days across HPAI subtypes; @Guinat2023). After $\tau_{\min}$, infectiousness ramps up and saturates to 1.
+where $\tau_{\min} = 1$ day is the minimum latent period and $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers). The hard latent period reflects that within-flock spread must occur before a farm generates sufficient environmental contamination for between-farm transmission. In discrete time ($\Delta t = 1$ day), $w(\tau_{\min}) = 0$, so the first positive infectiousness occurs at $\tau = \tau_{\min} + 1 = 2$ days post-infection ($w(2) = 1 - \exp(-1) \approx 0.63$). This effective 2-day latent period is at the upper end of, but consistent with, bird-level latent period estimates of 1–2 days [@Spickler2008; @Guinat2023] — noting that the farm-level latent period (time for within-flock amplification to produce between-farm transmission) is expected to exceed the individual bird latent period. After $\tau_{\min}$, infectiousness ramps up and saturates to 1.
 
 ### 3. Movement-Based Transmission
 
@@ -379,6 +379,12 @@ The apparent species difference conflates:
 
 Ducks may be *more* infectious despite lower apparent susceptibility. The research questions address this via scenario analysis.
 
+### t_change vs ρ
+
+The changepoint time and post-change intensity are jointly weakly identified: a later $t_{\text{change}}$ with $\rho \approx 1$ (near-constant profile) produces a similar cumulative spillover hazard to an earlier $t_{\text{change}}$ with smaller $\rho$ (steeper decline). This is a likelihood ridge analogous to the general $(t_0, \delta)$ trade-off in onset-decay models.
+
+**Mitigation**: The priors on both parameters are informative — $t_{\text{change}} \sim \text{Normal}(1\text{ Jan}, \text{SD}=10)$ and $\rho \sim \text{Beta}(2,2)$ — which regularise the ridge. Practical identifiability depends on whether the data span both temporal regions with sufficient HRZ/non-HRZ contrast. Simulation-based calibration should verify that posterior credible intervals narrow relative to the prior.
+
 ---
 
 ## Simplifying Assumptions
@@ -398,7 +404,7 @@ Ducks may be *more* infectious despite lower apparent susceptibility. The resear
 If the simplified model is insufficient:
 
 **High priority** (recommended before fitting):
-1. **Longer latent period** — increase $\tau_{\min}$ from 1 to 2 days, or estimate $\tau_{\min}$ from data if sufficient information exists.
+1. **Longer latent period** — increase $\tau_{\min}$ from 1 to 2 days (effective discrete-time latent period of 3 days), or estimate $\tau_{\min}$ from data if sufficient information exists. Note: the base model ($\tau_{\min} = 1$) already gives an effective 2-day latent period due to discrete-time evaluation.
 2. **Pathway-specific species effect** — separate $\beta_{\text{duck}}^{\text{spillover}}$, $\beta_{\text{duck}}^{\text{local}}$, $\beta_{\text{duck}}^{\text{movement}}$ if a single modifier is insufficient
 
 **Medium priority**:
