@@ -94,15 +94,16 @@ where:
 - Sum is over all currently infected farms
 
 **Kernel options**:
+
 - Exponential: $K(d) = \exp(-d/\alpha)$
 - Power law: $K(d) = (1 + d/\alpha)^{-\gamma}$
 - Cauchy: $K(d) = 1/(1 + (d/\alpha)^2)$
 
-**Decision**: Use **Cauchy** kernel $K(d) = 1/(1 + (d/\alpha)^2)$. HPAI transmission literature consistently favours fat-tailed kernels: @Boender2007 fitted a Cauchy-type kernel ($\alpha \approx 2.1$ km) to the Netherlands H7N7 outbreak; @Meadows2023 found universal fat-tailed patterns across livestock epidemics; @Seymour2018 found sub-exponential tails for Minnesota H5N2. Fat tails better capture occasional long-range jumps via unrecorded pathways (wind, shared services) absorbed into the spatial kernel. The reparameterisation $\beta_0 = \beta \cdot K(d_0)$ applies equally. Exponential and power-law kernels are retained as alternatives for model comparison.
+**Decision**: Use **Cauchy** kernel $K(d) = 1/(1 + (d/\alpha)^2)$. HPAI transmission literature consistently favours fat-tailed kernels: @Boender2007 fitted a Cauchy-type kernel ($\alpha \approx 2.1$ km) to the Netherlands H7N7 outbreak; @Boender2023 found common features in spatial livestock disease transmission parameters; @Seymour2021 used Bayesian nonparametric kernel estimation for the Netherlands H7N7 outbreak and found sub-exponential tails. Fat tails better capture occasional long-range jumps via unrecorded pathways (wind, shared services) absorbed into the spatial kernel. The reparameterisation $\beta_0 = \beta \cdot K(d_0)$ applies equally. Exponential and power-law kernels are retained as alternatives for model comparison.
 
 **Infectiousness profile**: Farm infectiousness increases over time as within-farm prevalence grows, with a hard latent period before any between-farm transmission is possible:
 $$w(\tau) = \begin{cases} 0 & \text{if } \tau < \tau_{\min} \\ 1 - \exp(-r \cdot (\tau - \tau_{\min})) & \text{if } \tau \geq \tau_{\min} \end{cases}$$
-where $\tau_{\min} = 1$ day is the minimum latent period and $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers). The hard latent period reflects that within-flock spread must occur before a farm generates sufficient environmental contamination for between-farm transmission (@Rasamoelina2023 report latent periods consistently <2 days across HPAI subtypes). After $\tau_{\min}$, infectiousness ramps up and saturates to 1.
+where $\tau_{\min} = 1$ day is the minimum latent period and $r \approx 1.0$/day is the within-farm growth rate (from mortality ledgers). The hard latent period reflects that within-flock spread must occur before a farm generates sufficient environmental contamination for between-farm transmission (latent periods consistently <2 days across HPAI subtypes; @Guinat2023). After $\tau_{\min}$, infectiousness ramps up and saturates to 1.
 
 ### 3. Movement-Based Transmission
 
@@ -112,6 +113,7 @@ Broiler_1 → broiler_2 movements can transmit infection via transport of infect
 $$\lambda_{\text{movement},j}(t) = \sum_{i: I_i(t)=1} M_{i \to j}(t) \cdot p_{\text{eff}}(i,t) \cdot w(t - T_i^I)$$
 
 where $p_{\text{eff}}(i,t)$ incorporates both pre-shipment testing and zone-based blocking:
+
 - If farm $i$ is in a regulated zone at time $t$: $p_{\text{eff}}(i,t) = 0$ (movements blocked)
 - Else if farm $i$ is in HRZ: $p_{\text{eff}}(i,t) = p_{\text{mov}} \cdot (1 - \sigma_{\text{test}})$ (testing intercepts with probability $\sigma_{\text{test}} = 0.9$)
 - Else: $p_{\text{eff}}(i,t) = p_{\text{mov}}$
@@ -119,12 +121,14 @@ where $p_{\text{eff}}(i,t)$ incorporates both pre-shipment testing and zone-base
 **Data**: 7,187 recorded movements (broiler_1 → broiler_2 only). Other movement types (to slaughter, equipment, personnel) are not recorded.
 
 **Evidence for inclusion**:
+
 - 6/103 cases detected via pre-shipment testing — these are farms *intercepted before transmitting*, indicating movement is a real transmission pathway
 - Pre-shipment testing sensitivity <100%, so some infected movements may get through
 - @Yoo2021 found ~30% of Korean H5N6 transmission via vehicle movements
 - Movement provides a mechanistically distinct pathway from spatial proximity (can explain long-range jumps)
 
 **Modifiers**:
+
 - Pre-shipment testing in HRZ intercepts infectious farms with probability $\sigma_{\text{test}}$ (assume 0.9)
 - Movements from farms in regulated zones are blocked
 - Effective probability: $p_{\text{eff}} = p_{\text{mov}} \cdot (1 - \sigma_{\text{test}})$ for HRZ sources
@@ -142,10 +146,11 @@ Chickens and ducks may have different susceptibility to infection.
 $$\lambda_j(t) = \beta_s \cdot (\lambda_j^{\text{spillover}}(t) + \lambda_j^{\text{local}}(t) + \lambda_j^{\text{movement}}(t))$$
 
 where $\beta_s$ (≡ `β_species[j]` in pseudocode) is species-specific:
+
 - $\beta_{\text{chicken}} = 1$ (reference)
 - $\beta_{\text{duck}} \in (0, 2]$ (to be estimated)
 
-**Rationale for bidirectional bound**: Ducks may be either more or less susceptible to infection than chickens depending on the pathway. Ducks are generally more resistant to HPAI *mortality* (@Smith2015 — chickens lack the RIG-I innate immune receptor), but may be *more* susceptible to *infection*, particularly via wild-bird spillover since they share aquatic habitats with migratory waterfowl. The (0, 2] bound allows the data to inform direction. See @Pantin-Jackwood2013 for strain-dependent species differences.
+**Rationale for bidirectional bound**: Ducks may be either more or less susceptible to infection than chickens depending on the pathway. Ducks are generally more resistant to HPAI *mortality* (@Smith2015 — chickens lack the RIG-I innate immune receptor), but may be *more* susceptible to *infection*, particularly via wild-bird spillover since they share aquatic habitats with migratory waterfowl. The (0, 2] bound allows the data to inform direction. See @PantinJackwood2013 for strain-dependent species differences.
 
 **Interpretation caveat**: $\beta_{\text{duck}}$ conflates true susceptibility with detectability (see `step01_research_questions.md`, Q3).
 
@@ -184,6 +189,7 @@ From 1 Jan, farms within 1km of confirmed cases are preventively culled.
 $$T_j^R = \max(T_{\text{trigger}}, T_{\text{capacity}})$$
 
 where:
+
 - $T_{\text{trigger}}$ is when the trigger case was confirmed
 - $T_{\text{capacity}} = T_{\text{trigger}} + \delta_{\text{prev}}$, i.e. the capacity delay is modelled via $\delta_{\text{prev}}$ (estimated from the 12 complete records). Since $T_j^R = \max(T_{\text{trigger}}, T_{\text{trigger}} + \delta_{\text{prev}}) = T_{\text{trigger}} + \delta_{\text{prev}}$ when $\delta_{\text{prev}} \geq 0$, the process simplifies to $T_j^R = T_{\text{trigger}} + \delta_{\text{prev}}$
 
@@ -194,6 +200,7 @@ where:
 ### Zones
 
 Regulated zones (3km protection, 10km surveillance) affect:
+
 - Movement restrictions
 - Enhanced detection (observation process, not transmission)
 
@@ -298,6 +305,7 @@ Process:
 ```
 
 **Nodes**:
+
 - `[Square brackets]`: estimated parameters or latent states
 - `{Curly braces}`: fixed covariates or fixed parameters (observed or set from literature)
 - `(Parentheses)`: processes/transformations
@@ -337,6 +345,7 @@ The process DAG involves latent quantities that are not directly observed:
 The spline-based spillover profile has more degrees of freedom than the previous onset+decay parameterisation, which raises identifiability concerns. In principle, a flexible ψ(t) could absorb local transmission signal by attributing spatially clustered cases to time-varying spillover.
 
 **Mitigations**:
+
 - The second-order random walk prior penalises rapid changes in ψ(t), preventing it from tracking individual case clusters
 - The seasonal prior mean provides a sensible default shape where data are uninformative (particularly at the edges of the observation window)
 - The HRZ/non-HRZ spatial contrast separates spillover from local transmission: cases clustering near infected farms (regardless of HRZ status) identify β, while the HRZ excess identifies spillover intensity
@@ -345,12 +354,14 @@ The spline-based spillover profile has more degrees of freedom than the previous
 ### φ_hrz / φ_non vs β
 
 Structurally identifiable because:
+
 - φ_hrz/φ_non: hazard depending on HRZ membership, modulated by the smooth temporal profile ψ(t)
 - β: proximity-dependent hazard varying with distance to specific infected farms
 
 **Key diagnostic**: Infections outside the HRZ can arise from local transmission (β) or non-HRZ spillover (φ_non). Since φ_non is expected to be small, non-HRZ infections primarily identify β. The HRZ excess then identifies φ_hrz.
 
 **Practical concerns**:
+
 - Early outbreak: few infected farms means low local pressure everywhere, so early infections inform spillover + β jointly rather than separately
 - Culling delays: capacity constraints extend infectious periods, inflating apparent β
 - Undetected farms: if surveillance misses cases, apparent spillover may be local transmission from undetected sources
@@ -361,7 +372,8 @@ Simulation-based identifiability checks recommended before drawing conclusions.
 
 Kernel scale and transmission rate trade off: higher β with smaller α can produce similar patterns to lower β with larger α.
 
-**Resolution**: Reparameterize to a compound parameter that is well-identified:
+**Resolution**: Reparameterise to a compound parameter that is well-identified:
+
 - Estimate $\beta_0 = \beta \cdot K(d_0)$ — transmission rate at reference distance $d_0$ (e.g., median inter-farm distance)
 - Estimate $\alpha$ — kernel decay scale
 - Derive $\beta = \beta_0 / K(d_0)$
@@ -371,6 +383,7 @@ This separates "how much transmission" ($\beta_0$) from "how far" ($\alpha$). Th
 ### β_duck
 
 The apparent species difference conflates:
+
 - True biological susceptibility
 - Viral shedding intensity/duration (ducks may shed longer)
 - Detection probability (lower mortality → delayed detection)
