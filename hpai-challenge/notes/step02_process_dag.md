@@ -279,10 +279,10 @@ Process:
 ## DAG Representation
 
 ```text
-    PARAMETERS                      FIXED           COVARIATES                       DATA
-    [φ_hrz, φ_non, t_change, ρ]  [β, α]  [β_duck]    {p_mov, r, τ_min, σ_test}      {HRZ}  {species}  {location}   {M_{i→j}(t): movements}
-         |         |        |           |             |        |          |                  |
-         v         v        v           v             v        v          v                  v
+    PARAMETERS                                          FIXED                COVARIATES                       DATA
+    [φ_hrz, φ_non, t_change, ρ, β, α, β_duck]    {p_mov, r, τ_min, σ_test}      {HRZ}  {species}  {location}   {M_{i→j}(t): movements}
+              |              |        |                  |                    |        |          |                  |
+              v              v        v                  v                    v        v          v                  v
     (Spillover) + (Local transmission) + (Movement transmission) ←---------
           \              |                    /
            \             |                   /
