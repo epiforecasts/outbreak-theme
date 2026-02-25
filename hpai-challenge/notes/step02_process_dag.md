@@ -62,7 +62,7 @@ Farms in the high-risk zone (HRZ) can be infected by contact with infected wild 
 
 $$\text{hazard}_{\text{spillover},j}(t) = \begin{cases} \phi \cdot \psi(t) & \text{if } j \in \text{HRZ} \\ \phi \cdot \eta \cdot \psi(t) & \text{otherwise} \end{cases}$$
 
-where $\phi$ is the spillover rate for HRZ farms, $\eta \in [0, 1]$ is the non-HRZ reduction factor, and $\psi(t)$ is a temporal profile estimated from the data.
+where $\phi$ is the spillover rate for HRZ farms, $\eta \in (0, 1)$ is the non-HRZ reduction factor, and $\psi(t)$ is a temporal profile estimated from the data.
 
 **Temporal profile — piecewise constant**: We model $\psi(t)$ as a two-piece step function with an estimated changepoint:
 
@@ -218,7 +218,7 @@ Parameters (estimated):
   t_change = spillover changepoint (day)
               Prior: Normal(1 Jan 2026, SD = 10 days)  (narrative: "migrate in early winter with stragglers through February")
   ρ       = relative spillover intensity after changepoint
-              Prior: Beta(2, 2)  (centred at 0.5; narrative supports decline but not specific magnitude)
+              Prior: Beta(2, 5)  (mean ≈ 0.29; encodes narrative expectation of decline while remaining broad enough for data to override)
   β       = farm-to-farm transmission rate
               Prior: Exponential(mean = 0.1)  (weakly informative; see α–β identifiability note)
   α       = spatial kernel scale (km)
