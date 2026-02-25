@@ -337,6 +337,8 @@ The process DAG involves latent quantities that are not directly observed:
 | β_duck (species) | **Weak** | Conflates susceptibility, infectiousness, and detectability; LogNormal(0, 0.5) prior on (0,2]. If posterior is prior-dominated, fall back to scenario analysis (fixed β_duck ∈ {0.5, 1.0, 1.5}) |
 | r (growth rate) | Fixed | Set from mortality ledger data (= 1.0/day) |
 | p_mov (movement) | Fixed | Set from literature (= 0.01); not identifiable, confounded with spatial kernel |
+| δ_reactive (reactive cull delay) | Imputed | Estimated from cases.csv (median ~2 days); directly sets infectious period duration, so biases in δ_reactive propagate to β |
+| δ_prev (preventive cull delay) | Imputed | Estimated from 12 complete records; high uncertainty (see limitation note); affects β via removal of susceptible farms |
 
 ### φ / η vs β
 
