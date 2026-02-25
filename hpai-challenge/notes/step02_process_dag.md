@@ -60,15 +60,15 @@ Farms in the high-risk zone (HRZ) can be infected by contact with infected wild 
 
 **Temporal profile**: Wild bird migration is seasonal — the narrative states birds "migrate in early winter with stragglers seen through February". Spillover pressure is not constant but follows a temporal profile:
 
-$$\text{hazard}_{\text{spillover},j}(t) = \begin{cases} \phi_{\text{hrz}} \cdot \psi(t) & \text{if } j \in \text{HRZ} \\ \phi_{\text{non}} \cdot \psi(t) & \text{otherwise} \end{cases}$$
+$$\text{hazard}_{\text{spillover},j}(t) = \begin{cases} \phi \cdot \psi(t) & \text{if } j \in \text{HRZ} \\ \phi \cdot \eta \cdot \psi(t) & \text{otherwise} \end{cases}$$
 
-where $\phi_{\text{hrz}}$ and $\phi_{\text{non}}$ are the spillover rate scalars for HRZ and non-HRZ farms respectively, and $\psi(t)$ is a flexible temporal profile estimated from the data.
+where $\phi$ is the spillover rate for HRZ farms, $\eta \in [0, 1]$ is the non-HRZ reduction factor, and $\psi(t)$ is a temporal profile estimated from the data.
 
 **Temporal profile — piecewise constant**: We model $\psi(t)$ as a two-piece step function with an estimated changepoint:
 
 $$\psi(t) = \begin{cases} 1 & \text{if } t \leq t_{\text{change}} \\ \rho & \text{if } t > t_{\text{change}} \end{cases}$$
 
-where $t_{\text{change}}$ is the changepoint (estimated) and $\rho \in (0, 1]$ is the relative spillover intensity in the second period. The first period is the reference ($\psi = 1$), so $\phi_{\text{hrz}}$ and $\phi_{\text{non}}$ represent the spillover rates during the early high-pressure phase.
+where $t_{\text{change}}$ is the changepoint (estimated) and $\rho \in (0, 1]$ is the relative spillover intensity in the second period. The first period is the reference ($\psi = 1$), so $\phi$ represents the HRZ spillover rate during the early high-pressure phase.
 
 **Rationale**: No external wild bird surveillance data are available for Jolly Island. With 103 cases over 44 days, the data cannot resolve a detailed temporal profile. A two-piece model captures the key feature — spillover pressure was higher early in the outbreak (migration arrival) and declined later — without over-parameterising. The narrative ("wild birds migrate in early winter with stragglers seen through February") supports a declining profile but not a specific shape.
 
@@ -211,10 +211,10 @@ For initial model development, we propose a simplified process:
 
 ```text
 Parameters (estimated):
-  φ_hrz   = spillover rate scalar (HRZ farms)
+  φ       = spillover rate (HRZ farms)
               Prior: LogNormal(log(0.01), 2)  (median 0.01/day; wide — no direct literature estimates for per-farm spillover rates; h₀ ≈ 10⁻³–10⁻² from farm-to-farm literature as rough anchor)
-  φ_non   = spillover rate scalar (non-HRZ farms)
-              Prior: LogNormal(log(0.01), 2)  (same as φ_hrz; data separates HRZ from non-HRZ)
+  η       = non-HRZ spillover reduction factor (φ_non = φ × η)
+              Prior: Beta(1, 5)  (mean 0.17; encodes expectation that non-HRZ spillover is much lower than HRZ)
   t_change = spillover changepoint (day)
               Prior: Normal(1 Jan 2026, SD = 10 days)  (narrative: "migrate in early winter with stragglers through February")
   ρ       = relative spillover intensity after changepoint
@@ -248,7 +248,7 @@ Process:
 
     # Spillover (piecewise constant temporal profile)
     ψ(t) = 1 if t ≤ t_change, else ρ
-    hazard_spillover = φ_hrz × ψ(t)  if j ∈ HRZ, else φ_non × ψ(t)
+    hazard_spillover = φ × ψ(t)  if j ∈ HRZ, else φ × η × ψ(t)
 
     # Within-farm infectiousness (shared by local and movement pathways)
     w(τ) = 0 if τ < τ_min, else 1 - exp(-r × (τ - τ_min))   # hard latent period, then saturates to 1
@@ -284,7 +284,7 @@ Process:
 
 ```text
     PARAMETERS                                          FIXED                COVARIATES                       DATA
-    [φ_hrz, φ_non, t_change, ρ, β, α, β_duck]    {p_mov, r, τ_min, σ_test}      {HRZ}  {species}  {location}   {M_{i→j}(t): movements}
+    [φ, η, t_change, ρ, β, α, β_duck]    {p_mov, r, τ_min, σ_test}      {HRZ}  {species}  {location}   {M_{i→j}(t): movements}
               |              |        |                  |                    |        |          |                  |
               v              v        v                  v                    v        v          v                  v
     (Spillover) + (Local transmission) + (Movement transmission) ←---------
@@ -307,7 +307,7 @@ Process:
 - `{Curly braces}`: fixed covariates or fixed parameters (observed or set from literature)
 - `(Parentheses)`: processes/transformations
 
-**Key distinction**: HRZ and species are covariates that modify how parameters act, not parameters themselves. We estimate φ_hrz and φ_non (spillover rate scalars), t_change and ρ (spillover temporal profile), β (transmission rate), α (kernel scale), and β_duck (relative susceptibility). Movement transmission probability p_mov is fixed at 0.01 based on literature (mechanistically important but not identifiable from these data). Other fixed inputs: τ_min (hard latent period), r (within-farm growth rate), and σ_test (pre-shipment testing sensitivity).
+**Key distinction**: HRZ and species are covariates that modify how parameters act, not parameters themselves. We estimate φ (HRZ spillover rate), η (non-HRZ reduction factor), t_change and ρ (spillover temporal profile), β (transmission rate), α (kernel scale), and β_duck (relative susceptibility). Movement transmission probability p_mov is fixed at 0.01 based on literature (mechanistically important but not identifiable from these data). Other fixed inputs: τ_min (hard latent period), r (within-farm growth rate), and σ_test (pre-shipment testing sensitivity).
 
 ---
 
@@ -328,8 +328,8 @@ The process DAG involves latent quantities that are not directly observed:
 
 | Parameter(s) | Identifiable? | Notes |
 |--------------|---------------|-------|
-| φ_hrz (HRZ spillover) | Conditional | Identified from HRZ/non-HRZ case contrast; early outbreak confounded with β |
-| φ_non (non-HRZ spillover) | Weak | Identified from non-HRZ cases not explained by local transmission; expected to be small |
+| φ (HRZ spillover) | Conditional | Identified from HRZ/non-HRZ case contrast; early outbreak confounded with β |
+| η (non-HRZ reduction) | Weak | Identified from non-HRZ cases not explained by local transmission; Beta(1,5) prior encodes expectation of low non-HRZ spillover |
 | t_change (changepoint) | Conditional | Identified from changing HRZ/non-HRZ case ratio over time |
 | ρ (post-change intensity) | Conditional | Identified from HRZ excess in second period relative to first |
 | β (transmission) | Conditional | Identified from non-HRZ cases + spatial-temporal clustering |
@@ -338,14 +338,14 @@ The process DAG involves latent quantities that are not directly observed:
 | r (growth rate) | Fixed | Set from mortality ledger data (= 1.0/day) |
 | p_mov (movement) | Fixed | Set from literature (= 0.01); not identifiable, confounded with spatial kernel |
 
-### φ_hrz / φ_non vs β
+### φ / η vs β
 
 Structurally identifiable because:
 
-- φ_hrz/φ_non: hazard depending on HRZ membership, modulated by the piecewise constant temporal profile ψ(t)
+- φ, η: hazard depending on HRZ membership, modulated by the piecewise constant temporal profile ψ(t)
 - β: proximity-dependent hazard varying with distance to specific infected farms
 
-**Key diagnostic**: Infections outside the HRZ can arise from local transmission (β) or non-HRZ spillover (φ_non). Since φ_non is expected to be small, non-HRZ infections primarily identify β. The HRZ excess then identifies φ_hrz.
+**Key diagnostic**: Infections outside the HRZ can arise from local transmission (β), movement transmission (p_mov), or non-HRZ spillover (φ × η). Since η is expected to be small (Beta(1,5) prior), non-HRZ infections primarily identify β. The HRZ excess then identifies φ.
 
 **Practical concerns**:
 
