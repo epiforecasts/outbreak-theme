@@ -174,7 +174,7 @@ Confirmed farms are culled.
 **Modelling choice**: We treat confirmation times $T_j^C$ as observed inputs (from the observation model). Removal is then a deterministic process:
 $$T_j^R = T_j^C + \delta_{\text{reactive}}$$
 
-where $\delta_{\text{reactive}}$ is a fixed or estimated delay (median ~2 days from data, but longer during capacity constraints from 6 Jan).
+where $\delta_{\text{reactive}} \geq 0$ is a fixed or estimated delay (median ~2 days from data, but longer during capacity constraints from 6 Jan).
 
 **Limitation**: A single $\delta_{\text{reactive}}$ averages over pre- and post-capacity-constraint periods, potentially underestimating infectious periods during high incidence (post-6 Jan) and inflating $\beta$. A time-varying $\delta_{\text{reactive}}(t)$ or explicit capacity model (analogous to the preventive culling treatment) could address this; see Complexity Option 4.
 
@@ -201,7 +201,7 @@ Regulated zones (3km protection, 10km surveillance) affect:
 - Movement restrictions
 - Enhanced detection (observation process, not transmission)
 
-For the process DAG, zones primarily affect which farms can be preventively culled.
+For the process DAG, zones affect: (1) movement blocking ($p_{\text{eff}}(i,t) = 0$ for sources in regulated zones), and (2) which farms can be preventively culled.
 
 ---
 
@@ -215,8 +215,8 @@ Parameters (estimated):
               Prior: LogNormal(log(0.01), 2)  (median 0.01/day; wide — no direct literature estimates for per-farm spillover rates; h₀ ≈ 10⁻³–10⁻² from farm-to-farm literature as rough anchor)
   η       = non-HRZ spillover reduction factor (φ_non = φ × η)
               Prior: Beta(1, 5)  (mean 0.17; encodes expectation that non-HRZ spillover is much lower than HRZ)
-  t_change = spillover changepoint (day)
-              Prior: Normal(1 Jan 2026, SD = 10 days)  (narrative: "migrate in early winter with stragglers through February")
+  t_change = spillover changepoint (day; t = 0 ≡ 1 Dec 2025, so 1 Jan 2026 = day 31)
+              Prior: Normal(31, SD = 10)  (narrative: "migrate in early winter with stragglers through February")
   ρ       = relative spillover intensity after changepoint
               Prior: Beta(2, 5)  (mean ≈ 0.29; encodes narrative expectation of decline while remaining broad enough for data to override)
   β       = farm-to-farm transmission rate
@@ -234,8 +234,8 @@ Parameters (fixed):
   σ_test  = pre-shipment testing sensitivity (= 0.9)
 
 Parameters (imputed / estimated from data summaries):
-  δ_reactive = confirmation-to-removal delay for reactive culling (median ~2 days from cases.csv)
-  δ_prev     = trigger-to-removal delay for preventive culling (estimated from 12 complete records; see limitation note)
+  δ_reactive = confirmation-to-removal delay for reactive culling (≥ 0; median ~2 days from cases.csv)
+  δ_prev     = trigger-to-removal delay for preventive culling (≥ 0; estimated from 12 complete records; see limitation note)
 
 States:
   S_j(t)  = farm j susceptible at t
@@ -383,7 +383,7 @@ Ducks may be *more* infectious despite lower apparent susceptibility. The resear
 
 The changepoint time and post-change intensity are jointly weakly identified: a later $t_{\text{change}}$ with $\rho \approx 1$ (near-constant profile) produces a similar cumulative spillover hazard to an earlier $t_{\text{change}}$ with smaller $\rho$ (steeper decline). This is a likelihood ridge analogous to the general $(t_0, \delta)$ trade-off in onset-decay models.
 
-**Mitigation**: The priors on both parameters are informative — $t_{\text{change}} \sim \text{Normal}(1\text{ Jan}, \text{SD}=10)$ and $\rho \sim \text{Beta}(2,5)$ — which regularise the ridge. The asymmetric $\rho$ prior additionally constrains the ridge from below by concentrating mass on substantial decline ($\text{mean} \approx 0.29$). Practical identifiability depends on whether the data span both temporal regions with sufficient HRZ/non-HRZ contrast. Simulation-based calibration should verify that posterior credible intervals narrow relative to the prior.
+**Mitigation**: The priors on both parameters are informative — $t_{\text{change}} \sim \text{Normal}(31, \text{SD}=10)$ and $\rho \sim \text{Beta}(2,5)$ — which regularise the ridge. The asymmetric $\rho$ prior additionally constrains the ridge from below by concentrating mass on substantial decline ($\text{mean} \approx 0.29$). Practical identifiability depends on whether the data span both temporal regions with sufficient HRZ/non-HRZ contrast. Simulation-based calibration should verify that posterior credible intervals narrow relative to the prior.
 
 ---
 
