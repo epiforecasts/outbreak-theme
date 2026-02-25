@@ -75,7 +75,7 @@ where $t_{\text{change}}$ is the changepoint (estimated) and $\rho \in (0, 1]$ i
 **Identifiability**: $t_{\text{change}}$ is identified from the changing proportion of HRZ vs non-HRZ cases over time. $\rho$ is identified from the HRZ excess in the second period relative to the first. The HRZ/non-HRZ contrast (~21% of farms in HRZ) separates spillover from local transmission.
 
 **Spatial alternatives** (for later consideration):
-- Continuous distance-to-wetland using `clc_32626.geojson`: $\phi \cdot \exp(-d_j / \rho)$
+- Continuous distance-to-wetland using `clc_32626.geojson`: $\phi \cdot \exp(-d_j / \ell)$ where $\ell$ is a distance-decay scale
 
 ### 2. Farm-to-Farm Transmission
 
