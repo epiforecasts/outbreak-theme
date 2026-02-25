@@ -60,22 +60,15 @@ $$\text{hazard}_{\text{spillover},j}(t) = \begin{cases} \phi_{\text{hrz}} \cdot 
 
 where $\phi_{\text{hrz}}$ and $\phi_{\text{non}}$ are the spillover rate scalars for HRZ and non-HRZ farms respectively, and $\psi(t)$ is a flexible temporal profile estimated from the data.
 
-**Temporal profile — spline with seasonal prior**: We model $\psi(t)$ as a smooth function using a cubic B-spline basis with a second-order random walk prior on the coefficients:
+**Temporal profile — piecewise constant**: We model $\psi(t)$ as a two-piece step function with an estimated changepoint:
 
-$$\log \psi(t) = \sum_{k=1}^{K} b_k B_k(t)$$
+$$\psi(t) = \begin{cases} 1 & \text{if } t \leq t_{\text{change}} \\ \rho & \text{if } t > t_{\text{change}} \end{cases}$$
 
-where $B_k(t)$ are cubic B-spline basis functions with $K \approx 6$ knots (roughly fortnightly resolution over the Dec–Feb period).
+where $t_{\text{change}}$ is the changepoint (estimated) and $\rho \in (0, 1]$ is the relative spillover intensity in the second period. The first period is the reference ($\psi = 1$), so $\phi_{\text{hrz}}$ and $\phi_{\text{non}}$ represent the spillover rates during the early high-pressure phase.
 
-**Prior on spline coefficients**:
-$$b_1 \sim \text{Normal}(\mu_1, \sigma_0)$$
-$$b_2 \sim \text{Normal}(\mu_2, \sigma_0)$$
-$$b_k \mid b_{k-1}, b_{k-2} \sim \text{Normal}(2b_{k-1} - b_{k-2}, \sigma_{\text{smooth}})$$
+**Rationale**: No external wild bird surveillance data are available for Jolly Island. With 103 cases over 44 days, the data cannot resolve a detailed temporal profile. A two-piece model captures the key feature — spillover pressure was higher early in the outbreak (migration arrival) and declined later — without over-parameterising. The narrative ("wild birds migrate in early winter with stragglers seen through February") supports a declining profile but not a specific shape.
 
-The prior means $\mu_k$ are set from Northern Hemisphere HPAI seasonality (typically lowest in September, peaking January–February), providing a sensible default shape. The smoothing parameter $\sigma_{\text{smooth}}$ controls flexibility: tight values keep the profile close to the seasonal prior, loose values let the data dominate.
-
-**Rationale**: No external wild bird surveillance data are available for Jolly Island. The case data themselves inform when spillover pressure was high (especially early HRZ cases before substantial farm-to-farm transmission), but this signal is limited. The seasonal prior encodes the well-established Northern Hemisphere HPAI seasonality pattern while allowing the data to adjust the shape — including asymmetry (e.g., fast rise, slow "stragglers through February" tail) if supported.
-
-**Identifiability**: The spline profile could in principle absorb transmission signal (explaining farm-to-farm cases as spillover). This is constrained by: (1) the HRZ/non-HRZ contrast — only ~21% of farms are in the HRZ, so spatial clustering of cases near infected farms identifies local transmission; (2) the smoothness prior — rapid day-to-day changes that would be needed to mimic local transmission are penalised; (3) separate $\phi_{\text{hrz}}$ and $\phi_{\text{non}}$ scalars anchor the spatial contrast.
+**Identifiability**: $t_{\text{change}}$ is identified from the changing proportion of HRZ vs non-HRZ cases over time. $\rho$ is identified from the HRZ excess in the second period relative to the first. The HRZ/non-HRZ contrast (~21% of farms in HRZ) separates spillover from local transmission.
 
 **Spatial alternatives** (for later consideration):
 - Continuous distance-to-wetland using `clc_32626.geojson`: $\phi \cdot \exp(-d_j / \rho)$
@@ -218,10 +211,10 @@ Parameters (estimated):
               Prior: LogNormal (weakly informative)
   φ_non   = spillover rate scalar (non-HRZ farms)
               Prior: LogNormal (weakly informative; expected to be much smaller than φ_hrz)
-  b_1..b_K = spline coefficients for log ψ(t) (K ≈ 6)
-              Prior: second-order random walk with seasonal prior mean (see §1)
-  σ_smooth = spline smoothing parameter
-              Prior: Half-Normal or fixed (controls flexibility of ψ(t))
+  t_change = spillover changepoint (day)
+              Prior: Normal (centred on early January, informed by migration timing)
+  ρ       = relative spillover intensity after changepoint
+              Prior: Beta or Uniform(0, 1) (spillover declines after migration peak)
   β       = farm-to-farm transmission rate
               Prior: Exponential(mean = 0.1)  (weakly informative; see α–β identifiability note)
   α       = spatial kernel scale (km)
@@ -249,8 +242,8 @@ States:
 Process:
   For each susceptible farm j at time t:
 
-    # Spillover (with flexible temporal profile)
-    ψ(t) = exp(Σ_k b_k B_k(t))    # spline-based temporal profile
+    # Spillover (piecewise constant temporal profile)
+    ψ(t) = 1 if t ≤ t_change, else ρ
     hazard_spillover = φ_hrz × ψ(t)  if j ∈ HRZ, else φ_non × ψ(t)
 
     # Within-farm infectiousness (shared by local and movement pathways)
@@ -287,7 +280,7 @@ Process:
 
 ```text
     PARAMETERS                      FIXED           COVARIATES                       DATA
-    [φ_hrz, φ_non, b_k]  [β, α]  [β_duck]    {p_mov, r, τ_min, σ_test}      {HRZ}  {species}  {location}   {M_{i→j}(t): movements}
+    [φ_hrz, φ_non, t_change, ρ]  [β, α]  [β_duck]    {p_mov, r, τ_min, σ_test}      {HRZ}  {species}  {location}   {M_{i→j}(t): movements}
          |         |        |           |             |        |          |                  |
          v         v        v           v             v        v          v                  v
     (Spillover) + (Local transmission) + (Movement transmission) ←---------
@@ -310,7 +303,7 @@ Process:
 - `{Curly braces}`: fixed covariates or fixed parameters (observed or set from literature)
 - `(Parentheses)`: processes/transformations
 
-**Key distinction**: HRZ and species are covariates that modify how parameters act, not parameters themselves. We estimate φ_hrz and φ_non (spillover rate scalars), b_k (spline coefficients for the spillover temporal profile), β (transmission rate), α (kernel scale), and β_duck (relative susceptibility). Movement transmission probability p_mov is fixed at 0.01 based on literature (mechanistically important but not identifiable from these data). Other fixed inputs: τ_min (hard latent period), r (within-farm growth rate), and σ_test (pre-shipment testing sensitivity).
+**Key distinction**: HRZ and species are covariates that modify how parameters act, not parameters themselves. We estimate φ_hrz and φ_non (spillover rate scalars), t_change and ρ (spillover temporal profile), β (transmission rate), α (kernel scale), and β_duck (relative susceptibility). Movement transmission probability p_mov is fixed at 0.01 based on literature (mechanistically important but not identifiable from these data). Other fixed inputs: τ_min (hard latent period), r (within-farm growth rate), and σ_test (pre-shipment testing sensitivity).
 
 ---
 
@@ -333,29 +326,19 @@ The process DAG involves latent quantities that are not directly observed:
 |--------------|---------------|-------|
 | φ_hrz (HRZ spillover) | Conditional | Identified from HRZ/non-HRZ case contrast; early outbreak confounded with β |
 | φ_non (non-HRZ spillover) | Weak | Identified from non-HRZ cases not explained by local transmission; expected to be small |
-| b_k (spline coefficients) | Regularised | Smoothness prior constrains flexibility; seasonal prior mean anchors shape where data are sparse |
+| t_change (changepoint) | Conditional | Identified from changing HRZ/non-HRZ case ratio over time |
+| ρ (post-change intensity) | Conditional | Identified from HRZ excess in second period relative to first |
 | β (transmission) | Conditional | Identified from non-HRZ cases + spatial-temporal clustering |
 | α (kernel scale) | Weak | Reparameterise: estimate β₀ = β·K(d₀) and α separately |
 | β_duck (species) | **Weak** | Conflates susceptibility, infectiousness, and detectability; LogNormal(0, 0.5) prior on (0,2]. If posterior is prior-dominated, fall back to scenario analysis (fixed β_duck ∈ {0.5, 1.0, 1.5}) |
 | r (growth rate) | Fixed | Set from mortality ledger data (= 1.0/day) |
 | p_mov (movement) | Fixed | Set from literature (= 0.01); not identifiable, confounded with spatial kernel |
 
-### Spillover ψ(t) identifiability
-
-The spline-based spillover profile has more degrees of freedom than the previous onset+decay parameterisation, which raises identifiability concerns. In principle, a flexible ψ(t) could absorb local transmission signal by attributing spatially clustered cases to time-varying spillover.
-
-**Mitigations**:
-
-- The second-order random walk prior penalises rapid changes in ψ(t), preventing it from tracking individual case clusters
-- The seasonal prior mean provides a sensible default shape where data are uninformative (particularly at the edges of the observation window)
-- The HRZ/non-HRZ spatial contrast separates spillover from local transmission: cases clustering near infected farms (regardless of HRZ status) identify β, while the HRZ excess identifies spillover intensity
-- σ_smooth can be fixed or estimated with a tight prior to control the bias-variance trade-off
-
 ### φ_hrz / φ_non vs β
 
 Structurally identifiable because:
 
-- φ_hrz/φ_non: hazard depending on HRZ membership, modulated by the smooth temporal profile ψ(t)
+- φ_hrz/φ_non: hazard depending on HRZ membership, modulated by the piecewise constant temporal profile ψ(t)
 - β: proximity-dependent hazard varying with distance to specific infected farms
 
 **Key diagnostic**: Infections outside the HRZ can arise from local transmission (β) or non-HRZ spillover (φ_non). Since φ_non is expected to be small, non-HRZ infections primarily identify β. The HRZ excess then identifies φ_hrz.
@@ -396,7 +379,7 @@ Ducks may be *more* infectious despite lower apparent susceptibility. The resear
 
 1. **Homogeneous mixing within species/location** — no farm-level heterogeneity beyond species and location
 2. **Fixed movement transmission probability** — $p_{\text{mov}} = 0.01$ not estimated (confounded with spatial kernel)
-3. **Spline spillover profile** — $\log \psi(t) = \sum_k b_k B_k(t)$ with seasonal prior; smooth but flexible, data-informed where possible
+3. **Piecewise constant spillover profile** — two periods separated by an estimated changepoint; captures declining spillover without over-parameterising
 4. **Binary HRZ** — spillover risk is HRZ vs non-HRZ (continuous distance-to-water preferred if feasible)
 5. **Hard latent period via infectiousness profile** — $w(\tau) = 0$ for $\tau < \tau_{\min}$ (1 day), then ramp-up; no separate S→E→I compartment
 6. **Fixed within-farm growth rate** — $r = 1.0$/day from mortality ledgers
@@ -421,7 +404,7 @@ If the simplified model is insufficient:
 6. **Shared services** — feed trucks, veterinary personnel, equipment (if data available)
 7. **Farm-level heterogeneity** — random effects on susceptibility/infectiousness
 8. **Wind-borne transmission** — directional kernel if spatial patterns suggest it
-9. **Parametric spillover profile** — revert to simpler onset+decay or Gaussian pulse if spline is over-parameterised for the available data
+9. **More flexible spillover profile** — spline or Gaussian process if the piecewise constant is too rigid and more data become available
 
 ---
 
