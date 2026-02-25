@@ -208,13 +208,13 @@ For initial model development, we propose a simplified process:
 ```text
 Parameters (estimated):
   φ_hrz   = spillover rate scalar (HRZ farms)
-              Prior: LogNormal (weakly informative)
+              Prior: LogNormal(log(0.01), 2)  (median 0.01/day; wide — no direct literature estimates for per-farm spillover rates; h₀ ≈ 10⁻³–10⁻² from farm-to-farm literature as rough anchor)
   φ_non   = spillover rate scalar (non-HRZ farms)
-              Prior: LogNormal (weakly informative; expected to be much smaller than φ_hrz)
+              Prior: LogNormal(log(0.01), 2)  (same as φ_hrz; data separates HRZ from non-HRZ)
   t_change = spillover changepoint (day)
-              Prior: Normal (centred on early January, informed by migration timing)
+              Prior: Normal(1 Jan 2026, SD = 10 days)  (narrative: "migrate in early winter with stragglers through February")
   ρ       = relative spillover intensity after changepoint
-              Prior: Beta or Uniform(0, 1) (spillover declines after migration peak)
+              Prior: Beta(2, 2)  (centred at 0.5; narrative supports decline but not specific magnitude)
   β       = farm-to-farm transmission rate
               Prior: Exponential(mean = 0.1)  (weakly informative; see α–β identifiability note)
   α       = spatial kernel scale (km)
