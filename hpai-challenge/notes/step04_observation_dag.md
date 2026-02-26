@@ -30,13 +30,10 @@ A farm progresses through stages:
 Infection (T^I) → Detectable (T^D) → Suspected (T^S) → Confirmed (T^C) → Culled (T^R)
 ```
 
-**Delays**:
-- $\delta_{\text{amplification}} = T^D - T^I$: Incubation/amplification — time until detectable signs. Includes within-farm epidemic build-up (depends on within-farm growth rate $r$; see `step02_process_dag.md`)
-- $\delta_{\text{recognition}} = T^S - T^D$: Recognition — time until farmer reports suspicion
-- $\delta_{\text{confirmation}} = T^C - T^S$: Confirmation — time from suspicion to lab confirmation
+**Delay**: The total delay $\delta = T^C - T^I$ combines amplification, recognition, and confirmation. Individual components are not separately identifiable from the data, so we model a single compound delay.
 
 **Observed**: $T^S$ (99/103 cases), $T^C$ (all cases)
-**Latent**: $T^I$, $T^D$
+**Latent**: $T^I$
 
 ### Detection methods
 
@@ -81,18 +78,9 @@ Both contribute to why $\beta_{\text{duck}}$ is not identifiable from case data 
 
 where $\delta$ is the total delay from infection to confirmation.
 
-**Options for $\delta$**:
-1. **Fixed**: Set $\delta$ = median($T^C - T^S$) + assumed incubation
-2. **Estimated**: Infer distribution of $\delta$ from data
-3. **Species-specific**: $\delta_{\text{chicken}} \neq \delta_{\text{duck}}$
+The compound delay $\delta$ is estimated as a single distribution. The observed $T^C - T^S$ (available for 99/103 cases, median ~3 days) provides a partial anchor, but since $T^I$ is latent the full delay must be inferred jointly with infection times.
 
-**Data available**:
-- $T^C - T^S$ observed for 99/103 cases (median ~3 days based on earlier analysis)
-- $T^I$ not observed — must infer
-
-**Recommendation**: Model $\delta$ as sum of:
-- $\delta_{\text{amplification}}$: time from farm infection to detectable mortality/morbidity. Includes within-farm epidemic build-up to detection threshold. It depends on flock size, mortality threshold, and within-farm growth rate $r$ (fixed at 1.0/day from mortality ledgers; see `step02_process_dag.md`).
-- $\delta_{\text{recognition}} + \delta_{\text{confirmation}}$: estimable from $T^C - T^S$ distribution (observed for 99/103 cases)
+**Species-specific delays**: $\delta_{\text{chicken}} \neq \delta_{\text{duck}}$ may be warranted given different clinical presentations, but identifiability is limited without external data.
 
 ### 2. Case ascertainment
 
@@ -199,19 +187,22 @@ LATENT (Process DAG)              OBSERVED (Data)
 [Force of infection λ_j(t)]
      |
      v
-[Infection time T^I_j]  ──────>  {Suspicion time T^S_j}
-     |                                    |
-     | (delay δ)                          |
-     v                                    v
-[Detectable state]      ──────>  {Confirmation time T^C_j}
-     |                                    |
-     v                                    v
-[Removal time T^R_j]    ──────>  {Cull dates}
+[Infection time T^I_j]
+     |
+     | (compound delay δ)
+     v
+[Suspicion]             ──────>  {Suspicion time T^S_j}
+     |
+     v
+[Confirmation]          ──────>  {Confirmation time T^C_j}
+     |
+     v
+[Removal T^R_j]        ──────>  {Cull dates}
 
 
 OBSERVATION PROCESSES:
 ─────────────────────
-(1) Detection delay: T^I → T^C via δ = δ_amplification + δ_recognition + δ_confirmation
+(1) Detection delay: T^I → T^C via compound δ (amplification + recognition + confirmation)
 (2) Case ascertainment: infected farms → confirmed cases
 (3) Removal recording: true cull time → recorded dates
 ```
@@ -227,7 +218,7 @@ OBSERVATION PROCESSES:
 
 1. **All infections eventually confirmed** (no under-ascertainment) — relaxed via scenario analysis for ducks
 2. **Detection delay is additive**: $T^C = T^I + \delta$
-3. **Delay distribution is stationary** (doesn't change over outbreak) — may not hold; detection likely faster in later phases as surveillance intensifies
+3. **Delay distribution is stationary** (doesn't change over outbreak) — may not hold; detection likely faster in later phases as surveillance intensifies. Requires sensitivity analysis
 4. **Cull dates accurate for reactive culls** (recorded correctly)
 5. **Preventive cull dates imputable** from trigger case timing
 6. **Farm locations observed without error** — geocoding uncertainty not modelled
@@ -257,10 +248,7 @@ The observation DAG determines:
 2. **Latent variable augmentation**: Which latent states to sample (e.g., $T^I$)
 3. **Missing data handling**: How to treat missing cull dates
 
-**Inference approach options**:
-- **Data augmentation MCMC**: Sample latent $T^I$ for each case
-- **Marginalisation**: Integrate out $T^I$ analytically if delay distribution is tractable
-- **Approximate**: Use $T^S$ or $T^C$ as proxy for $T^I$ with fixed offset
+**Inference approach**: Data augmentation MCMC — sample latent infection times $T^I$ for each case jointly with model parameters. This is the most principled approach as it properly propagates uncertainty in infection times through to parameter estimates, avoids restrictive distributional assumptions required for analytic marginalisation, and naturally handles the joint dependence between infection times and the force of infection.
 
 ---
 
@@ -268,10 +256,8 @@ The observation DAG determines:
 
 | Parameter | Type | Notes |
 |-----------|------|-------|
-| $\delta_{\text{amplification}}$ | Fix or estimate | Time from infection to detectable signs (1–3 days); depends on within-farm growth rate $r$ (fixed at 1.0/day in process model) |
-| $\delta_{\text{recognition}}$ | Estimate | Time from detectable signs to farmer reporting suspicion |
-| $\delta_{\text{confirmation}}$ | Estimate | Time from suspicion to lab confirmation (~2 days from $T^C - T^S$ data) |
-| $\sigma_\delta$ | Estimate | Variance in total detection delay $\delta$ |
+| $\delta$ | Estimate | Compound infection-to-confirmation delay; individual components (amplification, recognition, confirmation) not separately identifiable |
+| $\sigma_\delta$ | Estimate | Variance in compound detection delay $\delta$ |
 | $p_{\text{detect}}$ | Fix = 1 | Ascertainment probability (assume complete); relaxed via scenario analysis for ducks |
 | $\delta_{\text{reactive}}$ | Impute from data | Confirmation-to-removal delay ($\geq 0$; median ~2 days); see `step02_process_dag.md` |
 | $\delta_{\text{prev}}$ | Impute from data | Trigger-to-removal delay for preventive culling ($\geq 0$; from 12 complete records); see `step02_process_dag.md` |
