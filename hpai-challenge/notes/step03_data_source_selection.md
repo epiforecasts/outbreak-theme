@@ -223,4 +223,6 @@ Before model fitting:
 | Q4 | All primary + prev_culls + movement.csv (simulate modified culling) |
 | Q5 | All primary + prev_culls + movement.csv (simulate modified delays) |
 
+*Note*: Q2–Q5 additionally require all fixed inputs (mortality ledgers for r, movement.csv for p_mov, σ_test); these are omitted from rows for brevity.
+
 ---
