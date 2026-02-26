@@ -183,10 +183,10 @@ Before model fitting:
 4. **Impute prev_cull dates**: For 40 farms with missing dates:
    - Identify trigger case (confirmed farm within 1 km)
    - Assign cull date = $T_{\text{trigger}} + \delta_{\text{prev}}$ (where $\delta_{\text{prev}}$ is the median delay from 12 complete records)
-   - **Fallback** (no confirmed farm within 1 km): use nearest confirmed case regardless of distance; if multiple equidistant, use earliest confirmation date
+   - **Fallback** (no confirmed farm within 1 km): use the nearest confirmed case regardless of distance; if multiple equidistant, use the earliest confirmation date
 5. **Merge removals**: Combine reactive culls (from `cases.csv`) and preventive culls into single removal timeline
 6. **Movement network**: Build lookup for movements by date/source/destination
-   - Filter to broiler_1 → broiler_2 movements only
+   - Filter to broiler_1 → broiler_2 movements only (these are the only live-bird transfers between production farms in the data; movements to slaughter do not create new farm infections)
    - Assign HRZ status to source farms for pre-shipment testing modifier
    - Identify movements blocked by regulated zones
 
@@ -207,7 +207,7 @@ Before model fitting:
 | τ_min (hard latent period) | Fix = 1 day | Within-flock spread before between-farm transmission |
 | p_mov (movement transmission) | Fix = 0.01 | Confounded with spatial kernel; @Yoo2021 suggests ~30% via movement |
 | σ_test (pre-shipment sensitivity) | Fix = 0.9 | Pre-shipment testing intercept probability |
-| Detection delay distribution | Estimate or fix | From date_suspicious → date_confirmed |
+| Detection delay distribution | Estimate | Infection → confirmation delay; informed by date_suspicious → date_confirmed interval. Deferred to observation model (step 04). |
 
 **Note**: β is derived as β = β₀/K(d₀) where d₀ is a reference distance (e.g., median inter-farm distance). See `step02_process_dag.md` for full parameter specifications and priors.
 
@@ -218,9 +218,9 @@ Before model fitting:
 | Question | Data sources required |
 |----------|----------------------|
 | Q1 | cases.csv, population.csv (descriptive only) |
-| Q2 | All primary + prev_culls (full model) |
-| Q3 | All primary + prev_culls (estimate β_duck) |
-| Q4 | All primary + prev_culls (simulate modified culling) |
-| Q5 | All primary + prev_culls (simulate modified delays) |
+| Q2 | All primary + prev_culls + movement.csv (full model) |
+| Q3 | All primary + prev_culls + movement.csv (estimate β_duck) |
+| Q4 | All primary + prev_culls + movement.csv (simulate modified culling) |
+| Q5 | All primary + prev_culls + movement.csv (simulate modified delays) |
 
 ---
