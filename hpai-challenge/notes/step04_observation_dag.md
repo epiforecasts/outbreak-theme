@@ -147,9 +147,9 @@ Flock size ($N_j$) from `population.csv` is the registered capacity, not necessa
 
 Farms that were never confirmed contribute to the likelihood via survival:
 
-$$P(\text{farm } j \text{ not infected by } T) = \exp\left(-\int_0^T \lambda_j(t) dt\right)$$
+$$P(\text{farm } j \text{ not infected by } T_j^{\text{end}}) = \exp\left(-\int_0^{T_j^{\text{end}}} \lambda_j(t) \, dt\right)$$
 
-This requires knowing which farms were at risk (active, not yet culled) at each time point.
+where $T_j^{\text{end}} = \min(T, T_j^R)$ is the farm-specific at-risk horizon (study end or cull time, whichever is earlier). This requires knowing which farms were at risk (active, not yet culled) at each time point.
 
 **Note**: We do not have data on farms that were tested but negative. If active surveillance tested farms in zones around cases, this would provide additional information constraining undetected infections. Currently we assume no such data are available.
 
@@ -171,7 +171,7 @@ where:
 
 For non-cases (farms that remained susceptible):
 
-$$L_j \propto P(\text{no infection by end}) = \exp\left(-\int_0^T \lambda_j(t) dt\right)$$
+$$L_j \propto \exp\left(-\int_0^{T_j^{\text{end}}} \lambda_j(t) \, dt\right)$$
 
 **Note**: The above assumes complete ascertainment (scenario A). Under partial ascertainment (scenarios B–D), the case likelihood gains a detection term $p_{\text{detect}}$ and the non-case term becomes a mixture of "not infected" and "infected but undetected".
 
