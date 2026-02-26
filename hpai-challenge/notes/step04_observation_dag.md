@@ -26,7 +26,7 @@ The observation DAG separates **what actually happens** (process) from **what we
 
 A farm progresses through stages:
 
-```
+```text
 Infection (T^I) → Detectable (T^D) → Suspected (T^S) → Confirmed (T^C) → Culled (T^R)
 ```
 
@@ -173,11 +173,13 @@ For non-cases (farms that remained susceptible):
 
 $$L_j \propto P(\text{no infection by end}) = \exp\left(-\int_0^T \lambda_j(t) dt\right)$$
 
+**Note**: The above assumes complete ascertainment (scenario A). Under partial ascertainment (scenarios B–D), the case likelihood gains a detection term $p_{\text{detect}}$ and the non-case term becomes a mixture of "not infected" and "infected but undetected".
+
 ---
 
 ## DAG Representation
 
-```
+```text
 LATENT (Process DAG)              OBSERVED (Data)
 ─────────────────────             ──────────────────
 
