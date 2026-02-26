@@ -91,7 +91,7 @@ where $\delta$ is the total delay from infection to confirmation.
 - $T^I$ not observed — must infer
 
 **Recommendation**: Model $\delta$ as sum of:
-- $\delta_{\text{amplification}}$: time from farm infection to detectable mortality/morbidity. Includes within-farm epidemic build-up to detection threshold. Depends on flock size, mortality threshold, and within-farm growth rate $r$ (fixed at 1.0/day from mortality ledgers; see `step02_process_dag.md`).
+- $\delta_{\text{amplification}}$: time from farm infection to detectable mortality/morbidity. Includes within-farm epidemic build-up to detection threshold. It depends on flock size, mortality threshold, and within-farm growth rate $r$ (fixed at 1.0/day from mortality ledgers; see `step02_process_dag.md`).
 - $\delta_{\text{recognition}} + \delta_{\text{confirmation}}$: estimable from $T^C - T^S$ distribution (observed for 99/103 cases)
 
 ### 2. Case ascertainment
@@ -163,7 +163,7 @@ $$P(\text{farm } j \text{ not infected by } T) = \exp\left(-\int_0^T \lambda_j(t
 
 This requires knowing which farms were at risk (active, not yet culled) at each time point.
 
-**Note**: We do not have data on farms that were tested but negative. If active surveillance tested farms in zones around cases, this would provide additional information constraining undetected infections. Currently assume no such data available.
+**Note**: We do not have data on farms that were tested but negative. If active surveillance tested farms in zones around cases, this would provide additional information constraining undetected infections. Currently we assume no such data are available.
 
 ---
 
