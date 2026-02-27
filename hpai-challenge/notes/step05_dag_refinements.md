@@ -10,7 +10,7 @@ Following Abbott et al., this step revisits the process DAG (step 02) and observ
 
 **Step 02 specification**: piecewise constant $\psi(t)$ with estimated changepoint $t_{\text{change}}$ and post-change decline factor $\rho$. Four spillover parameters: $\phi$, $\eta$, $t_{\text{change}}$, $\rho$.
 
-**Problem**: the piecewise constant profile assumes spillover is active from the start of the simulation period ($\psi = 1$ for $t \leq t_{\text{change}}$). This means any farm can be infected from day 1 — there is no mechanism for zero spillover before wild bird arrival. Since the simulation window starts 1 Dec but the first case is not confirmed until 22 Dec (back-calculated infection ~12–13 Dec), the model will attribute ~2 weeks of accumulated spillover hazard to all farms before any cases occur. This inflates the baseline spillover exposure and risks confounding spillover with local transmission.
+**Problem**: the piecewise constant profile assumes spillover is active from the start of the simulation period ($\psi = 1$ for $t \leq t_{\text{change}}$). This means any farm can be infected from day 1 — there is no mechanism for zero spillover before wild bird arrival. Since the simulation window starts 1 Dec 2025 but the first case is not confirmed until 22 Dec 2025 (back-calculated infection ~12–13 Dec 2025), the model will attribute ~2 weeks of accumulated spillover hazard to all farms before any cases occur. This inflates the baseline spillover exposure and risks confounding spillover with local transmission.
 
 **Refinement**: replace the piecewise constant profile with onset + exponential decay:
 
@@ -40,7 +40,7 @@ Step 02 identified key identifiability concerns. We expand that analysis here wi
 |---|---|---|
 | $\phi$ vs $\beta$ (spillover vs local) | Early outbreak: few infected farms → low local pressure → early infections inform spillover + $\beta$ jointly | HRZ/non-HRZ contrast (~21% of farms in HRZ) separates the two; $t_0$ onset removes pre-arrival confounding |
 | $\beta$ vs $\alpha$ (rate vs scale) | Higher $\beta$ with smaller $\alpha$ mimics lower $\beta$ with larger $\alpha$ | Reparameterise: estimate $\beta_0 = \beta \cdot K(d_0)$ and $\alpha$ separately (see §4) |
-| $\beta_{\text{duck}}$ | Conflates susceptibility, infectiousness, detectability | Scenario analysis fallback: if posterior is prior-dominated, fix $\beta_{\text{duck}} \in \{0.5, 1.0, 1.5\}$ per run |
+| $\beta_{\text{duck}}$ | Conflates susceptibility, infectiousness, detectability | Scenario analysis fallback: if posterior 95% CrI covers >80% of the prior range, fix $\beta_{\text{duck}} \in \{0.5, 1.0, 1.5\}$ per run |
 | $t_0$ vs $\delta$ (onset vs decay) | Later $t_0$ with slower $\delta$ can produce similar cumulative hazard to earlier $t_0$ with faster $\delta$ | Informative priors on both; $t_0$ is anchored by first-case timing |
 | $p_{\text{mov}}$ | Confounded with spatial kernel for nearby farm pairs | Fix at 0.01; include pathway for mechanistic completeness |
 
@@ -147,7 +147,7 @@ Both candidates proceed through the remaining workflow steps (modularisation, in
 | Surveillance zone radius | — | 10 km | Regulatory |
 | Zone duration | — | 28 days | Regulatory |
 | Preventive cull radius | — | 1 km | Regulatory (from 1 Jan) |
-| Reference distance | $d_0$ | TBD | Median case-neighbour distance |
+| Reference distance | $d_0$ | Computed at data preparation time | Median inter-farm distance among case-farm neighbour pairs (see §4) |
 
 ### Fixed delays (subject to sensitivity analysis)
 
