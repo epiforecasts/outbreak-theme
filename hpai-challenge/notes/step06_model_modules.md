@@ -30,7 +30,7 @@ Test whether spillover from wild birds alone can explain the observed case patte
 | HRZ spillover rate | $\phi_{\text{hrz}}$ | $\text{LogNormal}(\log(10^{-3}), 1.0)$ | Daily per-farm spillover in HRZ at onset |
 | Non-HRZ spillover rate | $\phi_{\text{non}}$ | $\text{LogNormal}(\log(10^{-4}), 1.0)$ | Daily per-farm spillover outside HRZ |
 | Spillover decay rate | $\delta$ | $\text{Exponential}(\text{rate} = 50)$ (mean $= 0.02\ \text{day}^{-1}$) | Post-onset decline in spillover |
-| Duck susceptibility | $\beta_{\text{duck}}$ | $\text{Beta}(2, 8)$ | Relative susceptibility (chicken = 1) |
+| Duck susceptibility | $\beta_{\text{duck}}$ | $\text{Beta}(2, 8)$ | Relative susceptibility (chicken = 1); mean 0.2 reflects observed ~4× higher attack rate in chickens vs ducks |
 
 **Fixed at zero**:
 
@@ -49,7 +49,7 @@ $$\psi(t) = \begin{cases} 0 & \text{if } t < t_0 \\ \exp(-\delta \cdot (t - t_0)
 
 $$\lambda_j(t) = \beta_{\text{species}}[j] \times \phi_j \times \psi(t)$$
 
-where $\phi_j = \phi_{\text{hrz}}$ if $j \in \text{HRZ}$, else $\phi_{\text{non}}$; and $\beta_{\text{species}}[j] = \beta_{\text{duck}}$ for duck farms, 1 for chicken farms. Zone biosecurity reduction applies as in step 05.
+where $\phi_j = \phi_{\text{hrz}}$ if $j \in \text{HRZ}$, else $\phi_{\text{non}}$; and $\beta_{\text{species}}[j] = \beta_{\text{duck}}$ for duck farms, 1 for chicken farms. If farm $j$ is inside an active surveillance zone (10 km around a confirmed case, lasting 28 days), the hazard is reduced by a factor $(1 - \varepsilon)$ where $\varepsilon = 0.5$ represents enhanced biosecurity within regulated zones.
 
 ### Observation model
 
@@ -91,7 +91,7 @@ Add farm-to-farm spatial transmission. This is the core scientific model — mos
 | Spillover decay rate | $\delta$ | $\text{Exponential}(\text{rate} = 50)$ (mean $= 0.02\ \text{day}^{-1}$) | Post-onset decline in spillover |
 | Spatial transmission rate | $\beta$ | $\text{LogNormal}(\log(10^{-4}), 1.5)$ | Farm-to-farm transmission intensity |
 | Spatial kernel scale | $\alpha$ | $\text{LogNormal}(\log(3500), 0.5)$ | Characteristic distance (metres) |
-| Duck susceptibility | $\beta_{\text{duck}}$ | $\text{Beta}(2, 8)$ | Relative susceptibility (chicken = 1) |
+| Duck susceptibility | $\beta_{\text{duck}}$ | $\text{Beta}(2, 8)$ | Relative susceptibility (chicken = 1); mean 0.2 reflects observed ~4× higher attack rate in chickens vs ducks |
 
 **Fixed at zero**:
 
@@ -126,7 +126,7 @@ Same as Module 1, plus:
 - **Posterior predictive checks**: compare observed vs predicted (a) epidemic curve, (b) spatial distribution, (c) nearest-neighbour distances, (d) proportion of HRZ/non-HRZ cases. The spatial checks that failed in Module 1 should improve.
 - **Key diagnostics**:
   - $\beta$–$\alpha$ posterior correlation: if $|\text{corr}| > 0.8$, switch to $\beta_0$ reparameterisation.
-  - $\beta_{\text{duck}}$ posterior vs prior: if 95% CrI covers > 80% of prior range, fall back to scenario analysis.
+  - $\beta_{\text{duck}}$ posterior vs prior: if 95% CrI covers > 80% of prior range, fall back to scenario analysis. The 80% threshold is a pragmatic heuristic — it flags cases where the data have barely updated the prior, indicating the parameter is not meaningfully informed by the likelihood. The exact value is not critical; any threshold in the 70–90% range serves the same purpose.
   - Spatial residuals: any systematic patterns (e.g. specific regions with excess unexplained cases) may indicate missing mechanisms.
 - **Diagnostic to trigger Module 3**: if cases connected by recorded movements are systematically under-predicted, or if long-range transmission events cannot be explained by the exponential kernel, movement transmission is needed.
 
@@ -146,7 +146,7 @@ Add movement transmission for mechanistic completeness. This is the full model f
 
 | Parameter | Value | Role |
 |---|---|---|
-| $p_{\text{mov}}$ | 0.01 | Per-movement transmission probability |
+| $p_{\text{mov}}$ | 0.01 | Per-movement transmission probability; calibrated so that at typical movement volumes the pathway contributes a share broadly consistent with @Yoo2021's ~30% attribution for Korean H5N6 (step 02) |
 | $\sigma_{\text{test}}$ | 0.9 | Pre-shipment testing sensitivity (HRZ only) |
 
 **Other fixed parameters**: as step 05.
@@ -161,7 +161,9 @@ where $M_{i \to j}(t)$ is the number of recorded movements from farm $i$ to farm
 
 $$p_{\text{eff}}(i,t) = \begin{cases} 0 & \text{if } i \text{ in regulated zone at } t \\ p_{\text{mov}} \times (1 - \sigma_{\text{test}}) & \text{if } i \in \text{HRZ} \\ p_{\text{mov}} & \text{otherwise} \end{cases}$$
 
-Zone biosecurity and culling apply as in step 05.
+The conditions are evaluated in order. **Regulated zones** (3 km protection zone + 10 km surveillance zone around confirmed cases, lasting 28 days) are distinct from the **HRZ** (high-risk zone for wild bird spillover, defined by `hrz_32626.geojson` and static throughout the outbreak). A farm can be in both: an HRZ farm that later falls inside a regulated zone has its movements blocked. The first condition takes precedence, so HRZ pre-shipment testing only applies when the farm is not already movement-restricted by a regulated zone.
+
+Zone biosecurity reduction ($(1 - \varepsilon)$ hazard modifier for farms inside surveillance zones) and culling apply as in step 05.
 
 ### Data inputs
 
