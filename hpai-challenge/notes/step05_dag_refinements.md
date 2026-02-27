@@ -97,7 +97,7 @@ Step 04 flagged that detection delays may shorten as the outbreak progresses (he
 
 **Refinement**: conduct sensitivity analysis with two delay regimes:
 - **Stationary**: constant delays throughout
-- **Non-stationary**: shorter delays after 1 Jan (when surveillance zones and heightened awareness are in place)
+- **Non-stationary**: shorter delays after 1 Jan 2026 (when surveillance zones and heightened awareness are in place)
 
 If key conclusions ($\beta_{\text{duck}}$, spillover/local partitioning) are robust to this change, the stationary assumption is acceptable.
 
@@ -130,7 +130,7 @@ Both candidates proceed through the remaining workflow steps (modularisation, in
 | Spillover onset day | $t_0$ | $\text{Normal}(15, 5)$ | Day spillover begins ($t = 1$ is 1 Dec) |
 | HRZ spillover rate | $\phi_{\text{hrz}}$ | $\text{LogNormal}(\log(10^{-3}), 1.0)$ | Daily per-farm spillover in HRZ at onset |
 | Non-HRZ spillover rate | $\phi_{\text{non}}$ | $\text{LogNormal}(\log(10^{-4}), 1.0)$ | Daily per-farm spillover outside HRZ |
-| Spillover decay rate | $\delta$ | $\text{Exponential}(\text{mean} = 0.02)$ | Post-onset decline in spillover |
+| Spillover decay rate | $\delta$ | $\text{Exponential}(\text{rate} = 50\ \text{day}^{-1})$ (mean $= 0.02\ \text{day}^{-1}$) | Post-onset decline in spillover |
 | Transmission rate at reference distance | $\beta_0$ | $\text{LogNormal}(\log(10^{-4}), 1.5)$ | Farm-to-farm transmission intensity at $d_0$ |
 | Spatial kernel scale | $\alpha$ | $\text{LogNormal}(\log(3500), 0.5)$ | Characteristic distance (metres) |
 | Duck susceptibility | $\beta_{\text{duck}}$ | $\text{Beta}(2, 8)$ | Relative susceptibility (chicken = 1) |
