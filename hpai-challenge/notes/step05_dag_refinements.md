@@ -18,7 +18,7 @@ $$\psi(t) = \begin{cases} 0 & \text{if } t < t_0 \\ \exp(-\delta \cdot (t - t_0)
 
 where $t_0$ is the onset day (estimated) and $\delta$ is the post-onset decay rate (estimated). Spillover pressure is at its maximum on day $t_0$ and declines thereafter.
 
-**Rationale**: the narrative states birds "migrate in early winter with stragglers seen through February" — consistent with a relatively sharp arrival followed by declining pressure. A hard onset at $t_0$ with exponential decay is simpler than the piecewise constant specification (2 spillover-shape parameters instead of 2) and better captures the key feature: zero pressure before migration arrival.
+**Rationale**: the narrative states birds "migrate in early winter with stragglers seen through February" — consistent with a relatively sharp arrival followed by declining pressure. A hard onset at $t_0$ with exponential decay is structurally simpler than the piecewise constant form and better captures the key feature: zero pressure before migration arrival.
 
 **Spillover parameterisation**: step 02 used $\phi$ (HRZ rate) and $\eta$ (non-HRZ reduction factor, $\phi_{\text{non}} = \phi \times \eta$). An equivalent parameterisation estimates $\phi_{\text{hrz}}$ and $\phi_{\text{non}}$ directly, avoiding the implicit constraint $\phi_{\text{non}} < \phi_{\text{hrz}}$ imposed by $\eta \in (0, 1)$. The direct parameterisation is preferred — the data should determine the relative rates.
 
@@ -39,7 +39,7 @@ Step 02 identified key identifiability concerns. We expand that analysis here wi
 | Parameter pair | Identifiability concern | Resolution |
 |---|---|---|
 | $\phi$ vs $\beta$ (spillover vs local) | Early outbreak: few infected farms → low local pressure → early infections inform spillover + $\beta$ jointly | HRZ/non-HRZ contrast (~21% of farms in HRZ) separates the two; $t_0$ onset removes pre-arrival confounding |
-| $\beta$ vs $\alpha$ (rate vs scale) | Higher $\beta$ with smaller $\alpha$ mimics lower $\beta$ with larger $\alpha$ | Reparameterise: estimate $\beta_0 = \beta \cdot K(d_0)$ and $\alpha$ separately (see §4) |
+| $\beta$ vs $\alpha$ (rate vs scale) | Higher $\beta$ with smaller $\alpha$ mimics lower $\beta$ with larger $\alpha$ | Defer $\beta_0$ reparameterisation; activate if posterior ridge observed (see §4) |
 | $\beta_{\text{duck}}$ | Conflates susceptibility, infectiousness, detectability | Scenario analysis fallback: if posterior 95% CrI covers >80% of the prior range, fix $\beta_{\text{duck}} \in \{0.5, 1.0, 1.5\}$ per run |
 | $t_0$ vs $\delta$ (onset vs decay) | Later $t_0$ with slower $\delta$ can produce similar cumulative hazard to earlier $t_0$ with faster $\delta$ | Informative priors on both; $t_0$ is anchored by first-case timing |
 | $p_{\text{mov}}$ | Confounded with spatial kernel for nearby farm pairs | Fix at 0.01; include pathway for mechanistic completeness |
@@ -48,7 +48,7 @@ Step 02 identified key identifiability concerns. We expand that analysis here wi
 
 Step 02 proposed estimating $\beta_0 = \beta \cdot K(d_0)$ at reference distance $d_0$ to resolve the $\beta$–$\alpha$ trade-off. This separates "how much transmission" ($\beta_0$, identified from overall transmission intensity) from "how far" ($\alpha$, identified from spatial decay pattern).
 
-**Decision**: implement the $\beta_0$ reparameterisation from the start. Set $d_0$ to the median inter-farm distance among observed case-farm neighbour pairs. For the exponential kernel: $\beta = \beta_0 / \exp(-d_0 / \alpha)$.
+**Decision**: defer the $\beta_0$ reparameterisation until spatial transmission is confirmed to be non-negligible in posterior predictive checks. Start with direct estimation of $\beta$ and $\alpha$. If the $\beta$–$\alpha$ posterior shows a ridge, switch to $\beta_0 = \beta \cdot \exp(-d_0 / \alpha)$ with $d_0$ set to the median inter-farm distance among observed case-farm neighbour pairs, and derive $\beta = \beta_0 / \exp(-d_0 / \alpha)$.
 
 ### 5. Complexity adjustments
 
@@ -113,7 +113,7 @@ Fixed delay values directly determine back-calculated infection times, propagati
 
 Following the workflow's recommendation to proceed with multiple candidate DAGs when mechanisms are uncertain, we identify two candidates:
 
-**DAG A (base)**: onset + exponential decay spillover, exponential spatial kernel, $\beta_0/\alpha$ reparameterisation, 7 estimated parameters.
+**DAG A (base)**: onset + exponential decay spillover, exponential spatial kernel, direct $\beta/\alpha$ estimation ($\beta_0$ reparameterisation deferred), 7 estimated parameters.
 
 **DAG B (fat-tailed)**: as DAG A but with Cauchy spatial kernel. Same parameter count; different tail behaviour for local transmission.
 
@@ -131,7 +131,7 @@ Both candidates proceed through the remaining workflow steps (modularisation, in
 | HRZ spillover rate | $\phi_{\text{hrz}}$ | $\text{LogNormal}(\log(10^{-3}), 1.0)$ | Daily per-farm spillover in HRZ at onset |
 | Non-HRZ spillover rate | $\phi_{\text{non}}$ | $\text{LogNormal}(\log(10^{-4}), 1.0)$ | Daily per-farm spillover outside HRZ |
 | Spillover decay rate | $\delta$ | $\text{Exponential}(\text{rate} = 50\ \text{day}^{-1})$ (mean $= 0.02\ \text{day}^{-1}$) | Post-onset decline in spillover |
-| Transmission rate at reference distance | $\beta_0$ | $\text{LogNormal}(\log(10^{-4}), 1.5)$ | Farm-to-farm transmission intensity at $d_0$ |
+| Spatial transmission rate | $\beta$ | $\text{LogNormal}(\log(10^{-4}), 1.5)$ | Farm-to-farm transmission intensity (reparameterise to $\beta_0$ if ridge observed) |
 | Spatial kernel scale | $\alpha$ | $\text{LogNormal}(\log(3500), 0.5)$ | Characteristic distance (metres) |
 | Duck susceptibility | $\beta_{\text{duck}}$ | $\text{Beta}(2, 8)$ | Relative susceptibility (chicken = 1) |
 
@@ -147,7 +147,7 @@ Both candidates proceed through the remaining workflow steps (modularisation, in
 | Surveillance zone radius | — | 10 km | Regulatory |
 | Zone duration | — | 28 days | Regulatory |
 | Preventive cull radius | — | 1 km | Regulatory (from 1 Jan) |
-| Reference distance | $d_0$ | Computed at data preparation time | Median inter-farm distance among case-farm neighbour pairs (see §4) |
+| Reference distance | $d_0$ | Deferred (see §4) | Median case-neighbour distance; only needed if $\beta_0$ reparameterisation activated |
 
 ### Fixed delays (subject to sensitivity analysis)
 
@@ -168,7 +168,7 @@ Both candidates proceed through the remaining workflow steps (modularisation, in
 
 ## Refined Process DAG (Pseudocode)
 
-Changes from step 02: (1) spillover uses onset $t_0$ + decay $\delta$ instead of piecewise constant, (2) $\phi_{\text{hrz}}$/$\phi_{\text{non}}$ estimated directly instead of $\phi$/$\eta$, (3) $\beta_0$ reparameterisation, (4) exponential kernel as default.
+Changes from step 02: (1) spillover uses onset $t_0$ + decay $\delta$ instead of piecewise constant, (2) $\phi_{\text{hrz}}$/$\phi_{\text{non}}$ estimated directly instead of $\phi$/$\eta$, (3) exponential kernel as default, (4) $\beta_0$ reparameterisation deferred.
 
 ```text
 Parameters (estimated):
@@ -176,7 +176,7 @@ Parameters (estimated):
   φ_hrz    = HRZ spillover rate (at onset)
   φ_non    = non-HRZ spillover rate (at onset)
   δ        = spillover decay rate (post-onset)
-  β₀       = transmission rate at reference distance d₀
+  β        = spatial transmission rate
   α        = spatial kernel scale (metres)
   β_duck   = relative duck susceptibility
 
@@ -186,7 +186,7 @@ Parameters (fixed):
   p_mov    = per-movement transmission probability (= 0.01)
   σ_test   = pre-shipment testing sensitivity (= 0.9)
   ε        = zone biosecurity reduction (= 0.5)
-  d₀       = reference distance for β₀
+  # d₀ and β₀ reparameterisation deferred; activate if β–α ridge observed
 
 Process:
   For each susceptible farm j at time t:
@@ -199,8 +199,7 @@ Process:
     # Within-farm infectiousness (hard latent period, then saturating ramp-up)
     w(τ) = 0 if τ < τ_min, else 1 - exp(-r × (τ - τ_min))
 
-    # Local transmission (exponential kernel; β derived from β₀)
-    β = β₀ / exp(-d₀ / α)
+    # Local transmission (exponential kernel)
     hazard_local = β × Σ_{i: I_i(t)=1} w(t - T_i^I) × exp(-d_ij / α)
 
     # Movement transmission
