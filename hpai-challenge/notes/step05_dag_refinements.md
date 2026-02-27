@@ -39,7 +39,7 @@ Step 02 identified key identifiability concerns. We expand that analysis here wi
 | Parameter pair | Identifiability concern | Resolution |
 |---|---|---|
 | $\phi$ vs $\beta$ (spillover vs local) | Early outbreak: few infected farms → low local pressure → early infections inform spillover + $\beta$ jointly | HRZ/non-HRZ contrast (~21% of farms in HRZ) separates the two; $t_0$ onset removes pre-arrival confounding |
-| $\beta$ vs $\alpha$ (rate vs scale) | Higher $\beta$ with smaller $\alpha$ mimics lower $\beta$ with larger $\alpha$ | Defer $\beta_0$ reparameterisation; activate if posterior ridge observed (see §4) |
+| $\beta$ vs $\alpha$ (rate vs scale) | Higher $\beta$ with smaller $\alpha$ mimics lower $\beta$ with larger $\alpha$ | Defer $\beta_0$ reparameterisation; activate if $|\text{corr}(\beta, \alpha)| > 0.8$ in posterior (see §4) |
 | $\beta_{\text{duck}}$ | Conflates susceptibility, infectiousness, detectability | Scenario analysis fallback: if posterior 95% CrI covers >80% of the prior range, fix $\beta_{\text{duck}} \in \{0.5, 1.0, 1.5\}$ per run |
 | $t_0$ vs $\delta$ (onset vs decay) | Later $t_0$ with slower $\delta$ can produce similar cumulative hazard to earlier $t_0$ with faster $\delta$ | Informative priors on both; $t_0$ is anchored by first-case timing |
 | $p_{\text{mov}}$ | Confounded with spatial kernel for nearby farm pairs | Fix at 0.01; include pathway for mechanistic completeness |
@@ -48,7 +48,7 @@ Step 02 identified key identifiability concerns. We expand that analysis here wi
 
 Step 02 proposed estimating $\beta_0 = \beta \cdot K(d_0)$ at reference distance $d_0$ to resolve the $\beta$–$\alpha$ trade-off. This separates "how much transmission" ($\beta_0$, identified from overall transmission intensity) from "how far" ($\alpha$, identified from spatial decay pattern).
 
-**Decision**: defer the $\beta_0$ reparameterisation until spatial transmission is confirmed to be non-negligible in posterior predictive checks. Start with direct estimation of $\beta$ and $\alpha$. If the $\beta$–$\alpha$ posterior shows a ridge, switch to $\beta_0 = \beta \cdot \exp(-d_0 / \alpha)$ with $d_0$ set to the median inter-farm distance among observed case-farm neighbour pairs, and derive $\beta = \beta_0 / \exp(-d_0 / \alpha)$.
+**Decision**: defer the $\beta_0$ reparameterisation. Start with direct estimation of $\beta$ and $\alpha$. If the posterior correlation $|\text{corr}(\beta, \alpha)| > 0.8$, switch to $\beta_0 = \beta \cdot \exp(-d_0 / \alpha)$ with $d_0$ set to the median inter-farm distance among observed case-farm neighbour pairs, and derive $\beta = \beta_0 / \exp(-d_0 / \alpha)$.
 
 ### 5. Complexity adjustments
 
@@ -127,7 +127,7 @@ Both candidates proceed through the remaining workflow steps (modularisation, in
 
 | Parameter | Symbol | Prior | Role |
 |---|---|---|---|
-| Spillover onset day | $t_0$ | $\text{Normal}(15, 5)$ | Day spillover begins ($t = 1$ is 1 Dec) |
+| Spillover onset day | $t_0$ | $\text{Normal}(15, 5)$ truncated to $[1, 44]$ | Day spillover begins ($t = 1$ is 1 Dec 2025, $t = 44$ is 13 Jan 2026) |
 | HRZ spillover rate | $\phi_{\text{hrz}}$ | $\text{LogNormal}(\log(10^{-3}), 1.0)$ | Daily per-farm spillover in HRZ at onset |
 | Non-HRZ spillover rate | $\phi_{\text{non}}$ | $\text{LogNormal}(\log(10^{-4}), 1.0)$ | Daily per-farm spillover outside HRZ |
 | Spillover decay rate | $\delta$ | $\text{Exponential}(\text{rate} = 50\ \text{day}^{-1})$ (mean $= 0.02\ \text{day}^{-1}$) | Post-onset decline in spillover |
