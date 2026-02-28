@@ -1,28 +1,18 @@
 # Modularising the DAGs (Workflow Step 6)
 
-Following Abbott et al., this step decomposes the refined DAGs (step 05) into sub-models that can be independently developed, validated, and diagnosed before combining. The principle: start with simple sub-models, validate each in isolation, then add complexity incrementally. This makes it possible to diagnose poor fit, misspecification, or convergence issues before they become entangled.
+This step decomposes the refined DAGs (step 05) into independent modules that can be developed, validated, and — where possible — fitted separately. When something goes wrong during fitting, modular structure makes it possible to isolate the problem to a specific component.
+
+The question driving the decomposition is: what is separable? A module should have its own parameters and data inputs, and be something you can validate (at minimum through prior predictive checks) or fit on its own. Components that lack estimated parameters or that only make sense within a composed model are shared infrastructure.
 
 ---
 
-## Decomposition rationale
+## Modules
 
-The full model (step 05) has 7 estimated parameters, three transmission pathways, and a shared observation model. Fitting everything simultaneously makes it hard to tell whether problems originate in the process model, the observation model, or the data. Modularisation addresses this by building up the model in progressive fitting stages, each adding one mechanism.
+### Module A: Spillover
 
-The key insight from step 05 is that the three transmission pathways — spillover, local transmission, and movement — enter additively into the force of infection. This means we can "switch off" pathways by fixing their parameters to zero, producing nested sub-models that share the same observation model and likelihood structure.
+**Purpose**: external introduction of infection from wild birds, with temporal profile and zone-dependent rates.
 
-Each module is a **complete, fittable model** (process + observation), not just a code component. This means every module can go through the full validation cycle: prior predictive checks, synthetic data recovery, fit to real data, posterior predictive checks.
-
----
-
-## Module 1: Spillover only
-
-### Purpose
-
-Test whether spillover from wild birds alone can explain the observed case pattern. This is the simplest possible model: no farm-to-farm transmission, no movement. If spillover alone produces reasonable case counts and temporal dynamics, it establishes a baseline. If it fails (e.g. cannot explain spatial clustering or late-outbreak cases far from HRZ), that motivates adding local transmission.
-
-### Parameters
-
-**Estimated (5)**:
+**Parameters (estimated)**: $t_0$, $\phi_{\text{hrz}}$, $\phi_{\text{non}}$, $\delta$.
 
 | Parameter | Symbol | Prior | Role |
 |---|---|---|---|
@@ -30,245 +20,179 @@ Test whether spillover from wild birds alone can explain the observed case patte
 | HRZ spillover rate | $\phi_{\text{hrz}}$ | $\text{LogNormal}(\log(10^{-3}), 1.0)$ | Daily per-farm spillover in HRZ at onset |
 | Non-HRZ spillover rate | $\phi_{\text{non}}$ | $\text{LogNormal}(\log(10^{-4}), 1.0)$ | Daily per-farm spillover outside HRZ |
 | Spillover decay rate | $\delta$ | $\text{Exponential}(\text{rate} = 50)$ (mean $= 0.02\ \text{day}^{-1}$) | Post-onset decline in spillover |
-| Duck susceptibility | $\beta_{\text{duck}}$ | $\text{Beta}(2, 8)$ | Relative susceptibility (chicken = 1); mean 0.2 reflects observed ~4× higher attack rate in chickens vs ducks |
 
-**Fixed at zero**:
+**Inputs**: farm HRZ membership (`hrz_32626.geojson`), time $t$.
 
-| Parameter | Value | Effect |
-|---|---|---|
-| $\beta$ | 0 | No local transmission |
-| $p_{\text{mov}}$ | 0 | No movement transmission |
+**Output**: $\text{hazard}_{\text{spillover},j}(t)$ for each susceptible farm $j$.
 
-**Other fixed parameters**: as step 05 ($r = 1.0$/day, $\tau_{\min} = 1$ day, $\varepsilon = 0.5$, $\sigma_{\text{test}} = 0.9$).
-
-### Process equations
-
-For each susceptible farm $j$ at time $t$:
+**Equations**:
 
 $$\psi(t) = \begin{cases} 0 & \text{if } t < t_0 \\ \exp(-\delta \cdot (t - t_0)) & \text{if } t \geq t_0 \end{cases}$$
 
-$$\lambda_j(t) = \beta_{\text{species}}[j] \times \phi_j \times \psi(t)$$
+$$\text{hazard}_{\text{spillover},j}(t) = \phi_j \times \psi(t)$$
 
-where $\phi_j = \phi_{\text{hrz}}$ if $j \in \text{HRZ}$, else $\phi_{\text{non}}$; and $\beta_{\text{species}}[j] = \beta_{\text{duck}}$ for duck farms, 1 for chicken farms. If farm $j$ is inside an active surveillance zone (10 km around a confirmed case, lasting 28 days), the hazard is reduced by a factor $(1 - \varepsilon)$ where $\varepsilon = 0.5$ represents enhanced biosecurity within regulated zones.
+where $\phi_j = \phi_{\text{hrz}}$ if $j \in \text{HRZ}$, else $\phi_{\text{non}}$.
 
-### Observation model
+**Why this is a module**: spillover has no dependence on the infection state of other farms. It is a complete standalone model — given parameter values and a set of farms with HRZ labels, it produces hazard values without needing any other component. Composed with the observation module, it forms a fittable model on its own.
 
-Shared across all modules (described in full below in §Observation model).
+**Standalone validation**:
+- Unit tests: $\psi(t) = 0$ for $t < t_0$; correct HRZ assignment; exponential decay after onset.
+- Prior predictive checks: simulated spillover-only epidemics should produce O(10–1000) cases, with early cases concentrated in HRZ.
+- Synthetic data recovery: generate spillover-only data; confirm posteriors recover true values.
+- Fit to real data: estimate $t_0$, $\phi_{\text{hrz}}$, $\phi_{\text{non}}$, $\delta$ (plus $\beta_{\text{duck}}$ from shared components). Expect to capture early dynamics and HRZ excess but fail on spatial clustering near previously infected farms.
 
-### Data inputs
+### Module B: Transmission
 
-- `population.csv`: farm locations, species
-- `activity.csv`: time-varying susceptibility
-- `hrz_32626.geojson`: HRZ indicator
-- `cases.csv`: confirmation times (fit target)
-- `prev_culls.csv`: removal times (defines at-risk periods)
+**Purpose**: farm-to-farm spread, combining distance-dependent local transmission and movement-based transmission. These are grouped into a single module because they answer the same question (given infected farms, which susceptible farms get infected next?), share the same infectiousness profile $w(\tau)$, and are partially confounded — for nearby farm pairs that also have movement links, infections cannot be cleanly attributed to one pathway. The joint posterior of $(\beta, \alpha, p_{\text{mov}})$ must be examined together.
 
-### Expected behaviour and validation criteria
-
-- **Prior predictive checks**: simulated epidemics should produce O(10–1000) cases across plausible parameter draws, not 0 or all farms.
-- **Synthetic data recovery**: generate data from known spillover parameters with $\beta = 0$; confirm posteriors recover true values.
-- **Fit to real data**: expect $\phi_{\text{hrz}} > \phi_{\text{non}}$ (HRZ farms at higher risk). Expect the model to capture the early temporal pattern but struggle to explain spatial clustering of cases near previously infected farms.
-- **Posterior predictive checks**: compare observed vs predicted (a) epidemic curve, (b) proportion of HRZ vs non-HRZ cases over time, (c) spatial distribution of cases. Spatial clustering beyond what spillover can explain motivates Module 2.
-- **Diagnostic to trigger Module 2**: if posterior predictive p-value for nearest-neighbour distance between consecutive cases is < 0.05, or if there is systematic under-prediction of late-outbreak cases, local transmission is needed.
-
----
-
-## Module 2: Spillover + local transmission
-
-### Purpose
-
-Add farm-to-farm spatial transmission. This is the core scientific model — most outbreak dynamics should be captured here. The question is whether the spatial kernel and transmission rate can explain the observed spatial-temporal clustering of cases.
-
-### Parameters
-
-**Estimated (7)** — the full parameter set from step 05:
+**Parameters (estimated)**: $\beta$, $\alpha$, $p_{\text{mov}}$.
 
 | Parameter | Symbol | Prior | Role |
 |---|---|---|---|
-| Spillover onset day | $t_0$ | $\text{Normal}(15, 5)$ truncated to $[1, 44]$ | Day spillover begins |
-| HRZ spillover rate | $\phi_{\text{hrz}}$ | $\text{LogNormal}(\log(10^{-3}), 1.0)$ | Daily per-farm spillover in HRZ at onset |
-| Non-HRZ spillover rate | $\phi_{\text{non}}$ | $\text{LogNormal}(\log(10^{-4}), 1.0)$ | Daily per-farm spillover outside HRZ |
-| Spillover decay rate | $\delta$ | $\text{Exponential}(\text{rate} = 50)$ (mean $= 0.02\ \text{day}^{-1}$) | Post-onset decline in spillover |
 | Spatial transmission rate | $\beta$ | $\text{LogNormal}(\log(10^{-4}), 1.5)$ | Farm-to-farm transmission intensity |
 | Spatial kernel scale | $\alpha$ | $\text{LogNormal}(\log(3500), 0.5)$ | Characteristic distance (metres) |
-| Duck susceptibility | $\beta_{\text{duck}}$ | $\text{Beta}(2, 8)$ | Relative susceptibility (chicken = 1); mean 0.2 reflects observed ~4× higher attack rate in chickens vs ducks |
+| Per-movement transmission probability | $p_{\text{mov}}$ | $\text{Beta}(2, 20)$ (mean $\approx 0.09$) | Probability that a movement from an infected farm infects the destination |
 
-**Fixed at zero**:
+Step 05 fixed $p_{\text{mov}} = 0.01$ on identifiability grounds (confounded with the spatial kernel for nearby farm pairs). In a Bayesian framework, identifiability is a result rather than a precondition — the posterior either updates from the prior or it does not. Estimating $p_{\text{mov}}$ and checking whether the data are informative is preferable to fixing it a priori. Long-range movements (where the spatial kernel contributes negligibly) and the 6 pre-shipment-detected cases provide some identifying variation. If the posterior does not meaningfully update from the prior, that is itself a reportable finding.
 
-| Parameter | Value | Effect |
-|---|---|---|
-| $p_{\text{mov}}$ | 0 | No movement transmission |
+**Fixed parameters**: $r = 1.0$/day (within-farm growth rate), $\tau_{\min} = 1$ day (hard latent period), $\sigma_{\text{test}} = 0.9$ (pre-shipment testing sensitivity).
 
-**Other fixed parameters**: as step 05.
+**Inputs**: pairwise distances $d_{ij}$ (from `population.csv`), movement records from `movement.csv` (source, destination, date), infection times $T_i^I$ and removal times $T_i^R$, HRZ status of source farms, regulated zone status by farm and date.
 
-### Process equations
+**Output**: $\text{hazard}_{\text{transmission},j}(t)$ for each susceptible farm $j$.
 
-For each susceptible farm $j$ at time $t$:
+#### Sub-component: local transmission
 
-$$\lambda_j(t) = \beta_{\text{species}}[j] \times \left[\phi_j \times \psi(t) + \beta \sum_{i \in \mathcal{I}(t)} w(t - T_i^I) \times \exp(-d_{ij} / \alpha)\right]$$
+$$\text{hazard}_{\text{local},j}(t) = \beta \sum_{i \in \mathcal{I}(t)} w(t - T_i^I) \times K(d_{ij})$$
 
-where $\mathcal{I}(t)$ is the set of farms infected and not yet removed at time $t$, and $w(\tau)$ is the within-farm infectiousness profile from step 02:
+where $\mathcal{I}(t)$ is the set of farms infected and not yet removed at time $t$, and:
 
 $$w(\tau) = \begin{cases} 0 & \text{if } \tau < \tau_{\min} \\ 1 - \exp(-r \cdot (\tau - \tau_{\min})) & \text{if } \tau \geq \tau_{\min} \end{cases}$$
 
-Zone biosecurity and culling apply as in step 05.
+Default kernel: $K(d) = \exp(-d / \alpha)$ (exponential, DAG A). Alternative: $K(d) = 1/(1 + (d/\alpha)^2)$ (Cauchy, DAG B). The module interface is the same for both — only $K(d)$ changes.
 
-### Data inputs
+#### Sub-component: movement transmission
 
-Same as Module 1, plus:
-- Pairwise distance matrix between farms (precomputed from `population.csv`)
-
-### Expected behaviour and validation criteria
-
-- **Prior predictive checks**: simulated epidemics should show spatial clustering (cases near previous cases), not just spatially uniform spillover.
-- **Synthetic data recovery**: generate data from known $(\beta, \alpha)$ values; confirm posteriors recover both. Monitor $|\text{corr}(\beta, \alpha)|$ — if > 0.8, the $\beta_0$ reparameterisation (step 05, §4) is needed.
-- **Fit to real data**: expect $\beta > 0$ (local transmission present). Expect $\phi_{\text{hrz}}$ and $\phi_{\text{non}}$ to shift relative to Module 1 as some cases previously attributed to spillover are reassigned to local transmission.
-- **Posterior predictive checks**: compare observed vs predicted (a) epidemic curve, (b) spatial distribution, (c) nearest-neighbour distances, (d) proportion of HRZ/non-HRZ cases. The spatial checks that failed in Module 1 should improve.
-- **Key diagnostics**:
-  - $\beta$–$\alpha$ posterior correlation: if $|\text{corr}| > 0.8$, switch to $\beta_0$ reparameterisation.
-  - $\beta_{\text{duck}}$ posterior vs prior: if 95% CrI covers > 80% of prior range, fall back to scenario analysis. The 80% threshold is a pragmatic heuristic — it flags cases where the data have barely updated the prior, indicating the parameter is not meaningfully informed by the likelihood. The exact value is not critical; any threshold in the 70–90% range serves the same purpose.
-  - Spatial residuals: any systematic patterns (e.g. specific regions with excess unexplained cases) may indicate missing mechanisms.
-- **Diagnostic to trigger Module 3**: if cases connected by recorded movements are systematically under-predicted, or if long-range transmission events cannot be explained by the exponential kernel, movement transmission is needed.
-
----
-
-## Module 3: Full model
-
-### Purpose
-
-Add movement transmission for mechanistic completeness. This is the full model from step 05. Movement transmission is included with fixed $p_{\text{mov}}$ rather than estimated, so the parameter count remains 7. The purpose of this module is to check whether explicitly accounting for movements changes the parameter estimates or predictions meaningfully, and to provide the complete model for counterfactual analysis (research questions Q4, Q5).
-
-### Parameters
-
-**Estimated (7)**: identical to Module 2.
-
-**Fixed (no longer zero)**:
-
-| Parameter | Value | Role |
-|---|---|---|
-| $p_{\text{mov}}$ | 0.01 | Per-movement transmission probability; calibrated so that at typical movement volumes the pathway contributes a share broadly consistent with @Yoo2021's ~30% attribution for Korean H5N6 (step 02) |
-| $\sigma_{\text{test}}$ | 0.9 | Pre-shipment testing sensitivity (HRZ only) |
-
-**Other fixed parameters**: as step 05.
-
-### Process equations
-
-The full force of infection from step 05:
-
-$$\lambda_j(t) = \beta_{\text{species}}[j] \times \left[\phi_j \times \psi(t) + \beta \sum_{i \in \mathcal{I}(t)} w(t - T_i^I) \times \exp(-d_{ij} / \alpha) + \sum_{i \in \mathcal{I}(t)} M_{i \to j}(t) \times p_{\text{eff}}(i,t) \times w(t - T_i^I)\right]$$
+$$\text{hazard}_{\text{movement},j}(t) = \sum_{i \in \mathcal{I}(t)} M_{i \to j}(t) \times p_{\text{eff}}(i,t) \times w(t - T_i^I)$$
 
 where $M_{i \to j}(t)$ is the number of recorded movements from farm $i$ to farm $j$ on day $t$, and:
 
 $$p_{\text{eff}}(i,t) = \begin{cases} 0 & \text{if } i \text{ in regulated zone at } t \\ p_{\text{mov}} \times (1 - \sigma_{\text{test}}) & \text{if } i \in \text{HRZ} \\ p_{\text{mov}} & \text{otherwise} \end{cases}$$
 
-The conditions are evaluated in order. **Regulated zones** (3 km protection zone + 10 km surveillance zone around confirmed cases, lasting 28 days) are distinct from the **HRZ** (high-risk zone for wild bird spillover, defined by `hrz_32626.geojson` and static throughout the outbreak). A farm can be in both: an HRZ farm that later falls inside a regulated zone has its movements blocked. The first condition takes precedence, so HRZ pre-shipment testing only applies when the farm is not already movement-restricted by a regulated zone.
+Conditions evaluated in order. **Regulated zones** (3 km protection + 10 km surveillance around confirmed cases, lasting 28 days) are distinct from the **HRZ** (static wild bird spillover zone from `hrz_32626.geojson`). A farm can be in both; the regulated zone condition takes precedence.
 
-Zone biosecurity reduction ($(1 - \varepsilon)$ hazard modifier for farms inside surveillance zones) and culling apply as in step 05.
+#### Combined output
 
-### Data inputs
+$$\text{hazard}_{\text{transmission},j}(t) = \text{hazard}_{\text{local},j}(t) + \text{hazard}_{\text{movement},j}(t)$$
 
-Same as Module 2, plus:
-- `movement.csv`: source, destination, date (broiler_1 → broiler_2 only)
-- Regulated zone status by farm and date (derived from cases + zone rules)
+**Why this is a module**: transmission needs infection times but nothing about spillover rates, HRZ membership (for the local sub-component), or species. It cannot generate infections from nothing — it needs seed infections — but given back-calculated infection times it is conditionally fittable: given the infection history up to day $t$, what is the probability of each new infection on day $t+1$?
 
-### Expected behaviour and validation criteria
+**Conditional validation**:
+- Unit tests: kernel decays with distance; infectiousness ramps up correctly; removed farms excluded; movements filtered by regulated zone status; pre-shipment testing modifier applied to HRZ sources.
+- Synthetic data recovery: generate data from known $(\beta, \alpha, p_{\text{mov}})$ with spillover providing seed infections; confirm posteriors recover all three.
+- Conditional fit: fix infection times at back-calculated values; estimate $(\beta, \alpha, p_{\text{mov}})$ from the spatial-temporal pattern.
+- Identifiability diagnostics: examine the joint posterior of $(\beta, \alpha, p_{\text{mov}})$. Monitor $|\text{corr}(\beta, \alpha)|$ — if > 0.8, activate the $\beta_0$ reparameterisation (step 05, §4). Check whether $p_{\text{mov}}$ posterior updates from its prior; if not, report the degree of non-identifiability.
+- Compare kernel variants: fit exponential (DAG A) and Cauchy (DAG B); compare via posterior predictive checks on spatial clustering.
+- Check whether the 6 pre-shipment-detected cases are consistent with the posterior predictive distribution of movement-pathway infections.
 
-- **Synthetic data recovery**: generate data with known movement contribution; confirm that including movements does not distort spillover/local parameter estimates.
-- **Fit to real data**: compare posteriors to Module 2. If $\beta$ and $\alpha$ shift substantially, the movement pathway was absorbing some transmission previously attributed to the spatial kernel. If posteriors are similar, movements contribute little to the overall fit (expected, given $p_{\text{mov}}$ is small and fixed).
-- **Posterior predictive checks**: as Module 2, plus check whether the 6 pre-shipment-detected cases are consistent with the model's predicted movement hazard.
-- **Sensitivity analysis**: vary $p_{\text{mov}}$ over $[0.001, 0.05]$; report how $\beta$ and $\alpha$ posteriors change.
-- **Model for Q4/Q5**: this module provides the baseline for counterfactual simulations (modified culling, modified delays).
+### Module C: Observation
 
----
+**Purpose**: map latent infection times to observed confirmation times, and define the likelihood that connects process modules to data.
 
-## Observation model (shared)
+**Fixed parameters**: compound delay $d = \mu_E + \mu_{ID} + (D \to C)$, combining latent/amplification period, detection delay, and suspicion-to-confirmation delay. Default: $d = 3.5 + 5.0 + 2.0 = 10.5$ days (rounded to nearest integer per case).
 
-All three modules use the same observation model, as specified in steps 04 and 05.
+**Inputs**: infection times $T_j^I$ (from process modules or back-calculation), confirmation times $T_j^C$ (from `cases.csv`), at-risk periods (from removal component).
 
-### Compound delay
+**Output**: log-likelihood $\mathcal{L}$.
 
-Infection-to-confirmation delay is fixed at a literature-informed value $d = \mu_E + \mu_{ID} + (D \to C)$, combining the latent/amplification period, detection delay, and suspicion-to-confirmation delay. Default: $d = 3.5 + 5.0 + 2.0 = 10.5$ days (rounded to nearest integer per case for back-calculation).
-
-### Likelihood
+**Likelihood structure**:
 
 For each observed case $j$ with confirmation time $T_j^C$:
-
 - Back-calculate infection day: $T_j^I = T_j^C - d$
-- Case contribution: $\ell_j = \log\left(1 - \exp(-\lambda_j(T_j^I))\right)$ (infection probability on back-calculated day)
+- Case contribution: $\ell_j = \log\left(1 - \exp(-\lambda_j(T_j^I))\right)$
 
 For each non-case farm $j$ (never confirmed, not preventively culled before study end):
+- Survival contribution: $\ell_j = -\sum_{t=1}^{T_j^{\text{end}}} \lambda_j(t)$
 
-- Survival contribution: $\ell_j = -\sum_{t=1}^{T_j^{\text{end}}} \lambda_j(t)$ (survived the cumulative hazard)
+Total: $\mathcal{L} = \sum_j \ell_j$.
 
-Total log-likelihood: $\mathcal{L} = \sum_j \ell_j$.
+**Inference approach**: deterministic back-calculation with fixed delays initially. Data augmentation MCMC (sampling latent $T_j^I$ jointly with parameters) is the target once the model structure is validated.
 
-### Inference approach
+**Why this is a module**: the observation model can be validated independently of any process model. The compound delay assumptions can be checked against observed $T^S \to T^C$ intervals. Prior predictive checks on back-calculated infection time distributions require no process model.
 
-Deterministic back-calculation with fixed delays as the initial approach (step 05, §2). Data augmentation MCMC (sampling latent $T_j^I$ jointly with parameters) is the target approach once the base model structure is validated.
-
-### Delay sensitivity analysis
-
-Required for all modules. Grid over plausible delay values:
-- $\mu_E \in \{2, 3, 4, 5\}$ days
-- $\mu_{ID} \in \{3, 4, 5, 6, 7\}$ days
-
-Report how posteriors for key parameters ($\beta$, $\phi_{\text{hrz}}$, $\phi_{\text{non}}$) vary across the grid.
+**Standalone validation**:
+- Check that back-calculated infection times are consistent with $T^S \to T^C$ data (median ~3 days from suspicion to confirmation; the remaining delay should be plausible for latent + recognition periods).
+- Delay sensitivity analysis: grid over $\mu_E \in \{2, 3, 4, 5\}$ and $\mu_{ID} \in \{3, 4, 5, 6, 7\}$. Report how back-calculated infection times shift and whether any configurations produce implausible results (e.g. infection after confirmation).
 
 ---
 
-## Module dependencies and development order
+## Shared components
 
-### Nesting structure
+These components lack estimated parameters of their own and serve as infrastructure that modules plug into.
 
-The modules are strictly nested:
+### Species susceptibility
 
-$$\text{Module 1} \subset \text{Module 2} \subset \text{Module 3}$$
+Multiplicative modifier on total hazard: $\beta_{\text{species}}[j] = 1$ for chicken farms, $\beta_{\text{duck}}$ for duck farms, applied uniformly across all pathways.
 
-Module 1 is Module 2 with $\beta = 0$. Module 2 is Module 3 with $p_{\text{mov}} = 0$. This means:
+**Parameter (estimated)**: $\beta_{\text{duck}}$ with prior $\text{Beta}(2, 8)$. Mean 0.2 reflects the observed ~4× higher attack rate in chickens vs ducks; this conflates susceptibility, infectiousness, and detectability (step 02).
 
-- Shared code: the observation model, likelihood structure, spillover component, removal/culling logic, and species modifier are identical across all modules.
-- Progression: moving from Module $n$ to Module $n+1$ adds one transmission pathway without modifying existing components.
-- Comparison: because modules are nested, posterior predictive performance can be compared directly to assess whether each additional pathway improves fit.
+**Diagnostic**: if the posterior 95% CrI covers > 80% of the prior range, the parameter is not meaningfully informed by the data — fall back to scenario analysis with $\beta_{\text{duck}} \in \{0.5, 1.0, 1.5\}$. The 80% threshold is a pragmatic heuristic; any value in 70–90% serves the same purpose.
+
+Species susceptibility is estimable in any composed model that includes at least one process module, but is not independently fittable — it requires a hazard model underneath.
+
+### Removal
+
+Tracks when farms leave the at-risk population. No estimated parameters; delays imputed from data.
+
+**Reactive culling**: $T_j^R = T_j^C + \delta_{\text{reactive}}$, where $\delta_{\text{reactive}}$ is from `cases.csv` (median ~2 days).
+
+**Preventive culling** (from 1 Jan): farms within 1 km of a confirmed case are culled at $T_j^R = T_{\text{trigger}} + \delta_{\text{prev}}$, with $\delta_{\text{prev}}$ estimated from 12 complete records; 40/52 missing dates imputed.
+
+**Zone biosecurity**: farms inside an active surveillance zone (10 km around a confirmed case, lasting 28 days) have their hazard reduced by $(1 - \varepsilon)$ where $\varepsilon = 0.5$.
+
+---
+
+## Composition
+
+The full force of infection is the sum of process module outputs, modified by species susceptibility and zone biosecurity:
+
+$$\lambda_j(t) = \beta_{\text{species}}[j] \times \left[\text{hazard}_{\text{spillover},j}(t) + \text{hazard}_{\text{transmission},j}(t)\right]$$
+
+If farm $j$ is inside an active surveillance zone: $\lambda_j(t) \mathrel{*}= (1 - \varepsilon)$.
+
+The removal component determines each farm's at-risk period. The observation module provides the likelihood. Either process module can be composed independently with the observation module — omitting a module is equivalent to its hazard contribution being zero.
+
+### Fitting strategy
+
+Fitting proceeds by composing progressively richer models:
+
+1. **A + C** (spillover + observation) — 5 estimated parameters ($t_0$, $\phi_{\text{hrz}}$, $\phi_{\text{non}}$, $\delta$, $\beta_{\text{duck}}$). Validates the observation model and likelihood machinery on a simple process. Expected to capture early dynamics but fail on spatial clustering.
+
+2. **A + B + C** (+ transmission) — 8 estimated parameters (full set). Core model. Diagnostics: $\beta$–$\alpha$ correlation, $p_{\text{mov}}$ informativeness, spatial residuals, $\beta_{\text{duck}}$ informativeness.
+
+At each stage, four validation checks before proceeding:
+1. **Prior predictive checks** — simulated epidemics span a plausible range.
+2. **Synthetic data recovery** — posteriors recover known parameter values.
+3. **Fit to real data** — convergence diagnostics ($\hat{R}$, ESS, trace plots).
+4. **Posterior predictive checks** — simulated data match observed summaries.
 
 ### Development order
 
-1. **Data preprocessing** — load and join data sources, build distance matrix, construct movement network, impute missing preventive cull dates, assign HRZ membership. Shared across all modules.
-
-2. **Module 1 (spillover only)** — implement spillover hazard + observation model + likelihood. Validate the observation model and likelihood machinery on a simple process before adding transmission.
-
-3. **Module 2 (spillover + local)** — add the spatial transmission kernel. This is where most development effort goes, as the kernel computation is the most expensive part of the likelihood.
-
-4. **Module 3 (full model)** — add movement hazard lookup. Relatively straightforward given the Module 2 infrastructure.
-
-### Validation at each stage
-
-Each module goes through four validation steps before proceeding:
-
-1. **Prior predictive checks** — simulate from the prior; verify that simulated epidemics span a plausible range of outcomes (not all trivial or all catastrophic).
-2. **Synthetic data recovery** — generate data from known parameters; fit the model; verify posteriors concentrate around true values with appropriate coverage.
-3. **Fit to real data** — run inference on observed case data; check convergence diagnostics ($\hat{R}$, ESS, trace plots).
-4. **Posterior predictive checks** — simulate from the posterior; compare simulated data to observed data on key summary statistics.
-
-Only proceed to the next module once the current module passes all four checks.
-
----
-
-## Candidate DAG variants
-
-Step 05 identified two candidate DAGs: DAG A (exponential kernel, base) and DAG B (Cauchy kernel, fat-tailed). The modular structure applies identically to both — the kernel function is the only difference, and it affects only Modules 2 and 3.
-
-Development proceeds with DAG A (exponential) as the default. DAG B is fitted as a variant of Module 2 once DAG A's Module 2 is validated. Comparison via posterior predictive checks (particularly spatial clustering statistics) determines whether the heavier tail improves fit.
+1. **Data preprocessing** — shared across all compositions. Load and join data sources, build distance matrix, construct movement network, impute missing preventive cull dates, assign HRZ membership.
+2. **Module C (observation)** — validate delay assumptions against $T^S \to T^C$ data; implement likelihood structure.
+3. **Module A (spillover)** — implement and validate standalone; compose with C for first fit.
+4. **Module B (transmission)** — implement local sub-component first (kernel computation is the expensive part), then movement sub-component; compose with A + C for full fit.
 
 ---
 
 ## Link to research questions
 
-| Question | Module required |
-|----------|----------------|
+| Question | Composition required |
+|----------|---------------------|
 | Q1 (descriptive epidemiology) | None (pre-modelling) |
-| Q2 (forecasting) | Module 3 (full model) |
-| Q3 (duck susceptibility) | Module 2 or 3 ($\beta_{\text{duck}}$ estimated in both) |
-| Q4 (counterfactual: modified culling) | Module 3 (modify intervention rules) |
-| Q5 (counterfactual: modified delays) | Module 3 (modify $\delta_{\text{reactive}}$) |
+| Q2 (forecasting) | A + B + C (full) |
+| Q3 (duck susceptibility) | A + B + C ($\beta_{\text{duck}}$ estimated) |
+| Q4 (counterfactual: modified culling) | A + B + C (modify removal rules) |
+| Q5 (counterfactual: modified delays) | A + B + C (modify $\delta_{\text{reactive}}$) |
 
 ---
