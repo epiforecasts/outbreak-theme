@@ -10,9 +10,9 @@ The likelihood follows from Module C (step 06). Each farm contributes one term d
 
 **Case contribution** — for each confirmed farm $j$ with back-calculated infection day $T_j^I = T_j^C - d$ (where $d = 10.5$ days, step 06):
 
-$$\ell_j = \log\left(1 - \exp\left(-\lambda_j(T_j^I)\right)\right)$$
+$$\ell_j = -\sum_{t=1}^{T_j^I-1}\lambda_j(t)\;+\;\log\left(1 - \exp\left(-\lambda_j(T_j^I)\right)\right)$$
 
-This is the log-probability of infection occurring on day $T_j^I$, given that farm $j$ was susceptible at the start of that day. Survival from day 1 to day $T_j^I - 1$ is accounted for implicitly: for cases, the non-case survival terms cover the pre-infection period.
+The first term is survival from day 1 to day $T_j^I - 1$ (the farm was not infected on any earlier day); the second is infection on day $T_j^I$.
 
 **Non-case survival** — for each farm $j$ that was never confirmed and not preventively culled before the end of the observation period:
 
@@ -195,10 +195,10 @@ These quantities are constant across all MCMC iterations and should be computed 
 |---|---|---|
 | Pairwise distances | $d_{ij}$ for all farm pairs within a cutoff radius | $O(N^2)$ but sparse; use KD-tree for radius query |
 | Neighbour lists | For each farm, the set of farms within the kernel's effective range | From distance matrix; stored as flat arrays for cache efficiency |
-| HRZ membership | Binary flag per farm from `hrz_32626.geojson` | $O(N)$ point-in-polygon |
+| HRZ membership | Static wild-bird spillover zone; binary flag per farm from `hrz_32626.geojson` | $O(N)$ point-in-polygon |
 | Activity status | Per-farm, per-day indicator of bird presence | From `activity.csv`; $O(N \times T)$ |
 | Movement network | Source–destination–date tuples, filtered by zone restrictions | From `movement.csv`; prefilter by date range |
-| Regulated zone status | Per-farm, per-day indicator of surveillance zone membership | Derived from confirmed case dates and locations; 10 km radius, 28-day duration |
+| Regulated zone status | Dynamic movement-restriction zones (3 km protection + 10 km surveillance) around confirmed cases, 28-day duration. Distinct from the static HRZ; a farm can be in both, but regulated-zone status takes precedence in $p_{\text{eff}}$ calculations (step 06, Module B) | Derived from confirmed case dates and locations; recomputed as new cases are confirmed |
 | Bulk spillover bins | Farm counts by (HRZ status $\times$ species $\times$ active), per day | Enables $O(1)$ non-case survival computation per bin instead of $O(N)$ per farm |
 
 ### Per-iteration optimisations
@@ -246,7 +246,7 @@ Report whether key conclusions ($\beta_{\text{duck}}$, spillover/transmission pa
 
 ### Zone effectiveness
 
-Refit with $\varepsilon \in \{0.3, 0.5, 0.7\}$ (step 05, §Fixed parameters). This parameter directly affects the transmission hazard for farms inside surveillance zones and is otherwise unidentifiable from the data.
+Refit with $\varepsilon \in \{0.3, 0.5, 0.7\}$ (step 05, §Fixed parameters). This parameter reduces hazard for farms inside active regulated zones (dynamic 3 km protection + 10 km surveillance zones around confirmed cases; distinct from the static HRZ) and is otherwise unidentifiable from the data.
 
 ---
 
