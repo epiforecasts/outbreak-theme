@@ -8,7 +8,7 @@ This step specifies how to estimate the parameters defined in steps 05–06: the
 
 The likelihood follows from Module C (step 06). Each farm contributes one term depending on whether it was a confirmed case or survived uninfected.
 
-**Case contribution** — for each confirmed farm $j$ with back-calculated infection day $T_j^I = T_j^C - d$ (where $d = 10.5$ days, step 06):
+**Case contribution** — for each confirmed farm $j$ with back-calculated infection day $T_j^I = T_j^C - \lceil d \rceil$ (where $d = 10.5$ days, so $\lceil d \rceil = 11$; step 06):
 
 $$\ell_j = -\sum_{t=1}^{T_j^I-1}\lambda_j(t)\;+\;\log\left(1 - \exp\left(-\lambda_j(T_j^I)\right)\right)$$
 
