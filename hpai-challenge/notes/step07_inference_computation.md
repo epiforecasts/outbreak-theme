@@ -14,7 +14,7 @@ $$\ell_j = -\sum_{t=1}^{T_j^I-1}\lambda_j(t)\;+\;\log\left(1 - \exp\left(-\lambd
 
 The first term is survival from day 1 to day $T_j^I - 1$ (the farm was not infected on any earlier day); the second is infection on day $T_j^I$.
 
-**Non-case survival** — for each farm $j$ that was never confirmed and not preventively culled before the end of the observation period:
+**Non-case survival** — for each farm $j$ that was never confirmed (including farms preventively culled before the end of the study, which contribute survival up to their culling day):
 
 $$\ell_j = -\sum_{t=1}^{T_j^{\text{end}}} \lambda_j(t)$$
 
