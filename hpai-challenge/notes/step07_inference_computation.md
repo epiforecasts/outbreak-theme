@@ -87,7 +87,7 @@ where $\mathcal{D}$ is the set of plausible delays (e.g. 7–14 days) and $\pi(d
 
 ### Pragmatic pathway
 
-Start with **Option A** (deterministic back-calculation). This is sufficient for initial model development and validation. The grid sensitivity analysis will reveal whether conclusions depend on delay assumptions. If they do, transition to **Option C** (analytical marginalisation) — it retains NUTS compatibility while propagating delay uncertainty. Reserve **Option B** (data augmentation) for cases where the delay prior itself needs to be estimated from the data, which requires additional information not currently available.
+Statistically, a full joint model over infection times and parameters (Options B or C) is preferable — it propagates delay uncertainty rather than conditioning on a point estimate. The choice to start with **Option A** (deterministic back-calculation) is purely computational: it is simpler to implement and debug, and avoids mixing problems while the rest of the model is still being validated. Once the model structure is working, transition to **Option C** (analytical marginalisation), which retains NUTS compatibility while properly accounting for delay uncertainty. **Option B** (data augmentation) gives the most complete treatment but is only worth the added complexity if the delay prior itself needs to be estimated from data.
 
 | Approach | Parameters | Latent variables | Sampler | When to use |
 |---|---|---|---|---|
@@ -250,8 +250,8 @@ Refit with $\varepsilon \in \{0.3, 0.5, 0.7\}$ (step 05, §Fixed parameters). Th
 | Consideration | Decision | Rationale |
 |---|---|---|
 | Likelihood | FOI survival (analytical) | Differentiable, exact, sparse; no simulation needed |
-| Latent infection times | Option A (fixed delays) initially | 8 continuous params only; NUTS-compatible; grid sensitivity to validate |
-| Transition pathway | A → C → B | C if delay grid shows posterior sensitivity; B if delay prior itself needs estimating |
+| Latent infection times | Option A (fixed delays) initially; C or B preferred statistically | A is a computational shortcut for development; transition to C once model structure is validated |
+| Transition pathway | A → C → B | C for proper delay uncertainty; B if delay prior itself needs estimating |
 | Sampler | NUTS via Turing.jl | Low dimension, differentiable likelihood, proven in iteration 1 |
 | AD mode | ForwardDiff (forward-mode) | Optimal for $\leq 10$ parameters; chunk size = param count |
 | Chains | 4 × 1000 samples, 500 warmup | Standard; sufficient for $\hat{R}$ and ESS diagnostics |
