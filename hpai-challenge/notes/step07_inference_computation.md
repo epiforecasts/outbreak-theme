@@ -1,6 +1,6 @@
 # Inference and Computation (Workflow Step 7)
 
-This step specifies how to estimate the parameters defined in steps 05–06: the likelihood formulation, the treatment of latent infection times, the sampling algorithm, and the software. The model has 8 continuous estimated parameters (step 06, §Fitting strategy) and an analytical force-of-infection survival likelihood. The goal is to choose an inference approach that is efficient for this structure and identifies a clear pathway for increasing complexity if needed.
+This step specifies how to estimate the parameters defined in steps 05–06: the likelihood formulation, the treatment of latent infection times, the sampling algorithm, and the software. The model has 8 continuous estimated parameters (step 06, §Fitting strategy) and an analytical force-of-infection survival likelihood. This step chooses an inference approach that works for this structure and can be extended if needed.
 
 ---
 
@@ -41,9 +41,9 @@ The likelihood evaluation cost scales as $O(N_{\text{cases}} \times N_{\text{inf
 
 The compound delay $d = \mu_E + \mu_{ID} + (D \to C)$ determines the back-calculated infection day for each case. Because $d$ enters through integer conversion ($T_j^I = T_j^C - \lceil d \rceil$, rounding up to the nearest integer), it has zero gradient with respect to continuous parameters — it cannot be estimated by gradient-based samplers.
 
-This is the most consequential methodological choice in the inference design. Three approaches are available.
+How to handle this is the main decision in this step. Three approaches are available.
 
-### Option A: deterministic back-calculation (recommended first)
+### Option A: deterministic back-calculation (initial approach)
 
 Fix $d = 10.5$ days (step 05, §Observation DAG Refinements) and back-calculate all infection times deterministically: $T_j^I = T_j^C - 11$ (i.e. $\lceil 10.5 \rceil = 11$).
 
@@ -85,7 +85,7 @@ where $\mathcal{D}$ is the set of plausible delays (e.g. 7–14 days) and $\pi(d
 - Increases likelihood evaluation cost by a factor of $|\mathcal{D}|$ per case (~8× for $d \in [7, 14]$).
 - The `logsumexp` operation slightly complicates gradient computation but remains differentiable.
 
-### Recommended pathway
+### Pragmatic pathway
 
 Start with **Option A** (deterministic back-calculation). This is sufficient for initial model development and validation. The grid sensitivity analysis will reveal whether conclusions depend on delay assumptions. If they do, transition to **Option C** (analytical marginalisation) — it retains NUTS compatibility while propagating delay uncertainty. Reserve **Option B** (data augmentation) for cases where the delay prior itself needs to be estimated from the data, which requires additional information not currently available.
 
@@ -101,7 +101,7 @@ Start with **Option A** (deterministic back-calculation). This is sufficient for
 
 ### Sampler: NUTS
 
-The No-U-Turn Sampler is the default choice for low-dimensional continuous posterior distributions with analytical gradients. With 8 parameters, the model sits comfortably within the regime where NUTS is most efficient.
+NUTS is a standard sampler for low-dimensional continuous posteriors with analytical gradients. 8 parameters is well within its efficient range.
 
 **Automatic differentiation**: ForwardDiff.jl (forward-mode). Forward-mode AD has cost proportional to the number of input parameters; for $\leq 10$ parameters it is faster than reverse-mode. Set chunk size equal to the number of estimated parameters (5 for the A+C composition, 8 for A+B+C) so the full gradient is computed in a single forward pass.
 
@@ -148,14 +148,9 @@ These diagnostics are motivated by the identifiability analysis in step 05 (§3�
 
 ## Software
 
-### Recommended: Turing.jl
+### Turing.jl
 
-Turing.jl is the primary framework for this model. The key capabilities that make it suitable:
-
-- **Custom likelihood** via `@addlogprob!` — the FOI survival likelihood does not fit standard distribution families and must be coded directly.
-- **Composable samplers** — if the model later requires mixed discrete/continuous inference (Option B above), Turing supports `Gibbs(NUTS(...), MH(...))` without changing the model specification.
-- **Julia ecosystem** — spatial preprocessing (distances, zone membership), data handling, and likelihood computation all in one language, avoiding inter-language overhead.
-- **ForwardDiff integration** — automatic differentiation is built in; no manual gradient derivation required.
+Turing.jl is the primary framework for this model. It supports custom likelihoods via `@addlogprob!` (the FOI survival likelihood does not fit standard distribution families), composable samplers including `Gibbs(NUTS(...), MH(...))` for potential future mixed discrete/continuous inference (Option B), and built-in ForwardDiff automatic differentiation. Keeping everything in Julia avoids inter-language overhead for spatial preprocessing and data handling.
 
 ### Alternatives considered
 
@@ -256,7 +251,7 @@ Refit with $\varepsilon \in \{0.3, 0.5, 0.7\}$ (step 05, §Fixed parameters). Th
 |---|---|---|
 | Likelihood | FOI survival (analytical) | Differentiable, exact, sparse; no simulation needed |
 | Latent infection times | Option A (fixed delays) initially | 8 continuous params only; NUTS-compatible; grid sensitivity to validate |
-| Transition pathway | A → C → B | Increase complexity only if sensitivity analysis demands it |
+| Transition pathway | A → C → B | C if delay grid shows posterior sensitivity; B if delay prior itself needs estimating |
 | Sampler | NUTS via Turing.jl | Low dimension, differentiable likelihood, proven in iteration 1 |
 | AD mode | ForwardDiff (forward-mode) | Optimal for $\leq 10$ parameters; chunk size = param count |
 | Chains | 4 × 1000 samples, 500 warmup | Standard; sufficient for $\hat{R}$ and ESS diagnostics |
