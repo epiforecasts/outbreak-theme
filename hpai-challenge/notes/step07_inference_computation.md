@@ -39,13 +39,13 @@ The likelihood evaluation cost scales as $O(N_{\text{cases}} \times N_{\text{inf
 
 ## Treatment of latent infection times
 
-The compound delay $d = \mu_E + \mu_{ID} + (D \to C)$ determines the back-calculated infection day for each case. Because $d$ enters through integer rounding ($T_j^I = T_j^C - \text{round}(d)$), it has zero gradient with respect to continuous parameters — it cannot be estimated by gradient-based samplers.
+The compound delay $d = \mu_E + \mu_{ID} + (D \to C)$ determines the back-calculated infection day for each case. Because $d$ enters through integer conversion ($T_j^I = T_j^C - \lceil d \rceil$, rounding up to the nearest integer), it has zero gradient with respect to continuous parameters — it cannot be estimated by gradient-based samplers.
 
 This is the most consequential methodological choice in the inference design. Three approaches are available.
 
 ### Option A: deterministic back-calculation (recommended first)
 
-Fix $d = 10.5$ days (step 05, §Observation DAG Refinements) and back-calculate all infection times deterministically: $T_j^I = T_j^C - 11$ (after rounding).
+Fix $d = 10.5$ days (step 05, §Observation DAG Refinements) and back-calculate all infection times deterministically: $T_j^I = T_j^C - 11$ (i.e. $\lceil 10.5 \rceil = 11$).
 
 **Advantages**:
 - No additional latent variables — the model has only 8 continuous parameters.
