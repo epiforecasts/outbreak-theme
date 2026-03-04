@@ -19,7 +19,6 @@ function simulate_forward(
 )
     T_end = SIM_END + n_days_pred
     param_names = names(chains, :parameters)
-    n_draws = size(chains, 1) * size(chains, 3)
 
     results = DataFrame(sim=Int[], day=Int[], date=Date[],
                         new_infections=Int[], cum_infections=Int[])
@@ -106,7 +105,7 @@ function simulate_forward(
                 if rand(rng) < 1.0 - exp(-λ)
                     infected[j] = true
                     infect_day[j] = t
-                    removal_day[j] = t + COMPOUND_DELAY + 3  # rough removal
+                    removal_day[j] = t + COMPOUND_DELAY + REMOVAL_BUFFER
                     new_today += 1
                 end
             end

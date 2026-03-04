@@ -136,14 +136,18 @@ function run_inference(
     println("Target acceptance: $target_accept, max tree depth: $max_depth")
 
     # Turing expects init_params as a vector of values in parameter declaration order.
-    init_vec = collect(values(init_params))
+    base_vec = collect(values(init_params))
 
     chains = if n_chains > 1
+        # Small multiplicative jitter to diversify chain starting points
+        jitter_rng = Random.MersenneTwister(42)
+        init_vecs = [base_vec .* (1.0 .+ 0.01 .* randn(jitter_rng, length(base_vec)))
+                     for _ in 1:n_chains]
         sample(model, sampler, MCMCThreads(), n_samples, n_chains;
-               initial_params=init_vec, progress=true)
+               initial_params=init_vecs, progress=true)
     else
         sample(model, sampler, n_samples;
-               initial_params=init_vec, progress=true)
+               initial_params=base_vec, progress=true)
     end
 
     print_diagnostics(chains)

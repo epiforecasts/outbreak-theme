@@ -27,6 +27,7 @@ const MU_E = 3.5       # latent/amplification period (days)
 const MU_ID = 5.0      # detection delay (days)
 const D_TO_C = 2.0     # suspicion to confirmation (days)
 const COMPOUND_DELAY = ceil(Int, MU_E + MU_ID + D_TO_C)  # = 11
+const REMOVAL_BUFFER = 3  # additional days from confirmation to farm removal
 
 # Within-farm dynamics
 const R_GROWTH = 1.0   # within-farm growth rate (per day)
