@@ -80,7 +80,7 @@ function simulate_forward(
                     for (k, ni) in enumerate(data.nbr_idx[j])
                         infected[ni] || continue
                         τ = t - infect_day[ni]
-                        (τ < 1 || t >= removal_day[ni]) && continue
+                        (τ < TAU_MIN || t >= removal_day[ni]) && continue
                         τ > T_end && continue
                         λ += β_val * w[τ] * exp(-data.nbr_dist[j][k] * inv_α)
                     end

@@ -136,7 +136,6 @@ function run_inference(
     println("Target acceptance: $target_accept, max tree depth: $max_depth")
 
     # Turing expects init_params as a vector of values in parameter declaration order.
-    # Add small jitter to avoid identical starts across chains.
     init_vec = collect(values(init_params))
 
     chains = if n_chains > 1
