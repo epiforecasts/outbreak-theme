@@ -26,15 +26,11 @@ function simulate_forward(
 
     for sim in 1:n_sims
         # Sample a random posterior draw
-        draw_idx = rand(rng, 1:n_draws)
-        chain_idx = ((draw_idx - 1) ÷ size(chains, 1)) + 1
-        sample_idx = ((draw_idx - 1) % size(chains, 1)) + 1
+        sample_idx = rand(rng, 1:size(chains, 1))
+        chain_idx = rand(rng, 1:size(chains, 3))
 
         # Extract parameters
-        params = Dict{Symbol,Float64}()
-        for pn in param_names
-            params[pn] = chains[sample_idx, pn, chain_idx]
-        end
+        params = Dict(pn => chains[sample_idx, pn, chain_idx] for pn in param_names)
 
         t₀ = params[:t₀]
         φ_hrz = params[:φ_hrz]
@@ -42,7 +38,7 @@ function simulate_forward(
         δ_val = params[:δ]
         β_duck = params[:β_duck]
 
-        has_transmission = :β in keys(params)
+        has_transmission = haskey(params, :β)
         β_val = has_transmission ? params[:β] : 0.0
         α_val = has_transmission ? params[:α] : 1.0
         p_mov = has_transmission ? params[:p_mov] : 0.0
@@ -50,10 +46,7 @@ function simulate_forward(
         inv_α = 1.0 / α_val
 
         # Infectiousness function
-        w = Vector{Float64}(undef, T_end)
-        for τ in 1:T_end
-            w[τ] = τ < TAU_MIN ? 0.0 : 1.0 - exp(-R_GROWTH * (τ - TAU_MIN))
-        end
+        w = [τ < TAU_MIN ? 0.0 : 1.0 - exp(-R_GROWTH * (τ - TAU_MIN)) for τ in 1:T_end]
 
         # Track infection status
         infected = falses(data.N)

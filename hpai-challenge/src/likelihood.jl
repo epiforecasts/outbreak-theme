@@ -210,7 +210,6 @@ function foi_loglik(
             src_case = get(farm_to_case, src, 0)
             src_case == 0 && continue
             data.active[dst, t] || continue
-            data.case_farm_set[dst] && continue
 
             ti = data.case_infect_day[src_case]
             tr = data.case_removal_day[src_case]

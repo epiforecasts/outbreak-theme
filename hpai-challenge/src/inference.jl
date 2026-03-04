@@ -37,6 +37,10 @@ function find_map_spillover(data::ModelData, in_zone::BitMatrix; n_grid::Int = 5
         end
     end
 
+    if best_params === nothing
+        error("MAP spillover search found no finite posterior evaluations. " *
+              "Check data and priors.")
+    end
     println("MAP spillover: log-posterior = $(round(best_ll, digits=2))")
     println("  t₀=$(round(best_params.t₀, digits=1)), " *
             "φ_hrz=$(round(best_params.φ_hrz, sigdigits=3)), " *
@@ -92,6 +96,10 @@ function find_map_full(data::ModelData, in_zone::BitMatrix; n_samples::Int = 100
         end
     end
 
+    if best_params === nothing
+        error("MAP full search found no finite posterior evaluations. " *
+              "Check data and priors.")
+    end
     println("MAP full: log-posterior = $(round(best_ll, digits=2))")
     println("  t₀=$(round(best_params.t₀, digits=1)), " *
             "φ_hrz=$(round(best_params.φ_hrz, sigdigits=3)), " *
@@ -129,7 +137,7 @@ function run_inference(
 
     # Turing expects init_params as a vector of values in parameter declaration order.
     # Add small jitter to avoid identical starts across chains.
-    init_vec = collect(Float64, values(init_params))
+    init_vec = collect(values(init_params))
 
     chains = if n_chains > 1
         sample(model, sampler, MCMCThreads(), n_samples, n_chains;

@@ -86,10 +86,7 @@ function prepare_model_data(; max_dist::Float64 = 50_000.0, verbose::Bool = true
     # ── Load population ──
     pop = CSV.read(POP_CSV, DataFrame)
     N = nrow(pop)
-    id_to_idx = Dict{Int,Int}()
-    for i in 1:N
-        id_to_idx[pop.farm_id[i]] = i
-    end
+    id_to_idx = Dict{Int,Int}(id => i for (i, id) in enumerate(pop.farm_id))
     x = Float64.(pop.x)
     y = Float64.(pop.y)
     is_duck = pop.species .== "duck"
@@ -148,6 +145,11 @@ function prepare_model_data(; max_dist::Float64 = 50_000.0, verbose::Bool = true
         idx = id_to_idx[row.farm_id]
         tc = date_to_day(row.date_confirmed)
         ti = tc - COMPOUND_DELAY
+        if ti < SIM_START
+            error("Case farm_id=$(row.farm_id): back-calculated infection day $ti " *
+                  "is before simulation start (day $SIM_START). " *
+                  "Increase simulation window or reduce compound delay.")
+        end
         # Removal = cull_start if available, else confirmation day + 3 (fallback)
         tr = if !ismissing(row.cull_start)
             date_to_day(row.cull_start)
@@ -173,9 +175,8 @@ function prepare_model_data(; max_dist::Float64 = 50_000.0, verbose::Bool = true
     # For prev culls without dates, impute using median of known dates
     # relative to a reference (use the latest case confirmation before each cull)
     median_prev_day = if nrow(completed) > 0
-        # Use the median cull_start day as fallback
-        days = [date_to_day(row.cull_start) for row in eachrow(completed)]
-        sort(days)[length(days) ÷ 2 + 1]
+        days = sort!([date_to_day(row.cull_start) for row in eachrow(completed)])
+        days[(length(days) + 1) ÷ 2]
     else
         PREV_CULL_START_DAY + 3
     end
@@ -217,13 +218,9 @@ function prepare_model_data(; max_dist::Float64 = 50_000.0, verbose::Bool = true
 
     # ── Identify case and prev-cull farm sets ──
     case_farm_set = falses(N)
-    for c in 1:n_cases
-        case_farm_set[case_idx[c]] = true
-    end
+    case_farm_set[case_idx] .= true
     prev_cull_set = falses(N)
-    for i in 1:n_prev_culls
-        prev_cull_set[prev_cull_idx[i]] = true
-    end
+    prev_cull_set[prev_cull_idx] .= true
 
     # ── Bulk spillover bins ──
     # For farms that are neither cases nor preventively culled

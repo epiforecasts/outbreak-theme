@@ -60,7 +60,8 @@ function identify_hrz_farms(x::Vector{Float64}, y::Vector{Float64})
             if gtype == "MultiPolygon"
                 hrz[i] = point_in_multipolygon(x[i], y[i], coords)
             elseif gtype == "Polygon"
-                hrz[i] = point_in_polygon(x[i], y[i], coords[1])
+                # coords[1] is outer ring; coords[2:end] are holes
+                hrz[i] = point_in_multipolygon(x[i], y[i], [coords])
             end
         end
     end
