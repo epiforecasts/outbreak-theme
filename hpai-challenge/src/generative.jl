@@ -15,13 +15,23 @@ Draw one parameter set from the prior distributions (matching models.jl).
 function sample_prior_params(rng::AbstractRNG; model::Symbol = :full)
     t₀ = rand(rng, truncated(Normal(15, 5), 1, 44))
     φ_hrz = rand(rng, LogNormal(log(1e-3), 1.0))
-    φ_non = rand(rng, LogNormal(log(1e-4), 1.0))
     δ = rand(rng, Exponential(1 / 50))
     β_duck = rand(rng, Beta(2, 8))
 
     if model == :spillover
+        φ_non = rand(rng, LogNormal(log(1e-4), 1.0))
         return (; t₀, φ_hrz, φ_non, δ, β_duck)
-    else
+    elseif model == :full_reparam
+        ρ_non = rand(rng, Beta(2, 10))
+        κ = rand(rng, LogNormal(log(0.1), 1.5))
+        α = rand(rng, LogNormal(log(3500), 0.5))
+        p_mov = rand(rng, Beta(2, 20))
+        # Convert to simulation params
+        φ_non = ρ_non * φ_hrz
+        β = κ * φ_hrz
+        return (; t₀, φ_hrz, φ_non, δ, β_duck, β, α, p_mov)
+    else  # :full
+        φ_non = rand(rng, LogNormal(log(1e-4), 1.0))
         β = rand(rng, LogNormal(log(1e-4), 1.5))
         α = rand(rng, LogNormal(log(3500), 0.5))
         p_mov = rand(rng, Beta(2, 20))
@@ -50,6 +60,18 @@ function extract_posterior_params(chains; n_draws::Int = 200,
         draws[i] = NT(Tuple(chains[si, pn, ci] for pn in param_names))
     end
     return draws
+end
+
+"""
+    reparam_to_sim_params(params::NamedTuple) -> NamedTuple
+
+Convert reparameterised chain params (ρ_non, κ) to simulation params (φ_non, β).
+Passes through params that don't need conversion.
+"""
+function reparam_to_sim_params(p::NamedTuple)
+    φ_non = p.ρ_non * p.φ_hrz
+    β = p.κ * p.φ_hrz
+    return (; t₀=p.t₀, φ_hrz=p.φ_hrz, φ_non, δ=p.δ, β_duck=p.β_duck, β, α=p.α, p_mov=p.p_mov)
 end
 
 # ── Generative epidemic simulation ───────────────────────────────────────────
