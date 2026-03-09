@@ -143,7 +143,7 @@ function run_inference(
         jitter_rng = Random.MersenneTwister(42)
         init_vecs = [base_vec .* (1.0 .+ 0.01 .* randn(jitter_rng, length(base_vec)))
                      for _ in 1:n_chains]
-        sample(model, sampler, MCMCThreads(), n_samples, n_chains;
+        sample(model, sampler, MCMCSerial(), n_samples, n_chains;
                initial_params=init_vecs, progress=true)
     else
         sample(model, sampler, n_samples;
