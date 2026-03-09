@@ -139,12 +139,8 @@ function run_posterior_predictive(
     data::ModelData, chains;
     n_sims::Int = 200,
     rng::AbstractRNG = Random.GLOBAL_RNG,
-    convert_params::Union{Function, Nothing} = nothing,
 )
     draws = extract_posterior_params(chains; n_draws=n_sims, rng)
-    if convert_params !== nothing
-        draws = [convert_params(d) for d in draws]
-    end
 
     # Per-sim summaries
     summary_df = DataFrame(
@@ -312,12 +308,9 @@ function run_synthetic_recovery(
         println("    $k = $(round(v, sigdigits=4))")
     end
 
-    # Convert reparameterised params for simulation
-    sim_params = model_type == :full_reparam ? reparam_to_sim_params(true_nt) : true_nt
-
     # Simulate synthetic epidemic
     println("  Simulating synthetic epidemic...")
-    sim = simulate_epidemic(data, sim_params; rng)
+    sim = simulate_epidemic(data, true_nt; rng)
     println("  Synthetic epidemic: $(sim.total_cases) cases, first day $(sim.first_case_day)")
 
     if sim.total_cases < 5
@@ -341,9 +334,6 @@ function run_synthetic_recovery(
     if model_type == :spillover
         map_params = find_map_spillover(synth_data, synth_zone)
         m = spillover_model(synth_data, synth_zone)
-    elseif model_type == :full_reparam
-        map_params = find_map_full_reparam(synth_data, synth_zone)
-        m = full_reparam_model(synth_data, synth_zone)
     else
         map_params = find_map_full(synth_data, synth_zone)
         m = full_model(synth_data, synth_zone)
@@ -414,7 +404,7 @@ function main(;
     in_zone = data.in_surv_zone
 
     # ── §1 Prior predictive checks ──
-    for model_type in [:spillover, :full, :full_reparam]
+    for model_type in [:spillover, :full]
         println("\n═══ Prior predictive: $model_type ═══")
         df = run_prior_predictive(data; n_sims=n_prior_sims,
                                   model_type, rng)
@@ -440,22 +430,11 @@ function main(;
     chains_full = run_inference(m_full, map_full;
                                 n_chains, n_samples, n_warmup)
 
-    println("\n═══ Stage 3: Reparameterised full model ═══")
-    map_reparam = find_map_full_reparam(data, in_zone)
-    m_reparam = full_reparam_model(data, in_zone)
-    chains_reparam = run_inference(m_reparam, map_reparam;
-                                    n_chains, n_samples, n_warmup)
-
     # ── §3 Posterior predictive checks ──
-    for (model_name, chains, conv) in [
-        ("spillover", chains_spill, nothing),
-        ("full", chains_full, nothing),
-        ("full_reparam", chains_reparam, reparam_to_sim_params),
-    ]
+    for (model_name, chains) in [("spillover", chains_spill), ("full", chains_full)]
         println("\n═══ Posterior predictive: $model_name ═══")
         summary_df, epicurve_df = run_posterior_predictive(
-            data, chains; n_sims=n_posterior_sims, rng,
-            convert_params=conv)
+            data, chains; n_sims=n_posterior_sims, rng)
 
         CSV.write(joinpath(VALIDATION_DIR,
                            "posterior_predictive_$(model_name)_summary.csv"), summary_df)
@@ -468,13 +447,11 @@ function main(;
     println("\n═══ MCMC diagnostics ═══")
     save_mcmc_diagnostics(chains_spill, "spillover")
     save_mcmc_diagnostics(chains_full, "full")
-    save_mcmc_diagnostics(chains_reparam, "full_reparam")
 
     # ── §5 Synthetic data recovery ──
     for (model_name, model_type, chains) in [
         ("spillover", :spillover, chains_spill),
         ("full", :full, chains_full),
-        ("full_reparam", :full_reparam, chains_reparam),
     ]
         println("\n═══ Synthetic recovery: $model_name ═══")
         recovery_df = run_synthetic_recovery(
