@@ -6,34 +6,41 @@ using Random
 # ── 9. MAP initialisation ────────────────────────────────────────────────────
 
 """
-    find_map_spillover(data, in_zone; n_grid=5) -> NamedTuple
+    find_map_spillover(data, in_zone; n_samples=2000) -> NamedTuple
 
-Grid search over the 5 spillover parameters to find an approximate MAP.
+Random search from prior for the 6 spillover parameters to find an approximate MAP.
 Returns a NamedTuple suitable for chain initialisation.
 """
-function find_map_spillover(data::ModelData, in_zone::BitMatrix; n_grid::Int = 5)
+function find_map_spillover(data::ModelData, in_zone::BitMatrix; n_samples::Int = 2000)
     best_ll = -Inf
     best_params = nothing
 
-    t₀_grid = range(5, 25, length=n_grid)
-    φ_hrz_grid = exp.(range(log(1e-4), log(1e-2), length=n_grid))
-    φ_non_grid = exp.(range(log(1e-5), log(1e-3), length=n_grid))
-    δ_grid = range(0.005, 0.1, length=n_grid)
-    β_duck_grid = range(0.1, 0.5, length=n_grid)
+    rng = Random.MersenneTwister(42)
 
-    for t₀ in t₀_grid, φ_hrz in φ_hrz_grid, φ_non in φ_non_grid,
-            δ in δ_grid, β_duck in β_duck_grid
-        ll = foi_loglik_spillover(data, in_zone, t₀, φ_hrz, φ_non, δ, β_duck)
+    d_t₀ = truncated(Normal(15, 5), 1, 44)
+    d_φ_hrz = LogNormal(log(1e-3), 1.0)
+    d_φ_non = LogNormal(log(1e-4), 1.0)
+    d_δ = Exponential(1/50)
+    d_β_duck = Beta(2, 8)
+    d_σ = LogNormal(log(0.3), 1.0)
+
+    for _ in 1:n_samples
+        t₀ = rand(rng, d_t₀)
+        φ_hrz = rand(rng, d_φ_hrz)
+        φ_non = rand(rng, d_φ_non)
+        δ = rand(rng, d_δ)
+        β_duck = rand(rng, d_β_duck)
+        σ = rand(rng, d_σ)
+
+        ll = foi_loglik_spillover(data, in_zone, t₀, φ_hrz, φ_non, δ, β_duck, σ)
         isinf(ll) && continue
-        lp = logpdf(truncated(Normal(15, 5), 1, 44), t₀) +
-             logpdf(LogNormal(log(1e-3), 1.0), φ_hrz) +
-             logpdf(LogNormal(log(1e-4), 1.0), φ_non) +
-             logpdf(Exponential(1/50), δ) +
-             logpdf(Beta(2, 8), β_duck)
+        lp = logpdf(d_t₀, t₀) + logpdf(d_φ_hrz, φ_hrz) +
+             logpdf(d_φ_non, φ_non) + logpdf(d_δ, δ) +
+             logpdf(d_β_duck, β_duck) + logpdf(d_σ, σ)
         total = ll + lp
         if total > best_ll
             best_ll = total
-            best_params = (t₀=t₀, φ_hrz=φ_hrz, φ_non=φ_non, δ=δ, β_duck=β_duck)
+            best_params = (t₀=t₀, φ_hrz=φ_hrz, φ_non=φ_non, δ=δ, β_duck=β_duck, σ=σ)
         end
     end
 
@@ -46,7 +53,8 @@ function find_map_spillover(data::ModelData, in_zone::BitMatrix; n_grid::Int = 5
             "φ_hrz=$(round(best_params.φ_hrz, sigdigits=3)), " *
             "φ_non=$(round(best_params.φ_non, sigdigits=3)), " *
             "δ=$(round(best_params.δ, sigdigits=3)), " *
-            "β_duck=$(round(best_params.β_duck, digits=3))")
+            "β_duck=$(round(best_params.β_duck, digits=3)), " *
+            "σ=$(round(best_params.σ, sigdigits=3))")
     return best_params
 end
 
@@ -67,6 +75,7 @@ function find_map_full(data::ModelData, in_zone::BitMatrix; n_samples::Int = 100
     d_φ_non = LogNormal(log(1e-4), 1.0)
     d_δ = Exponential(1/50)
     d_β_duck = Beta(2, 8)
+    d_σ = LogNormal(log(0.3), 1.0)
     d_β = LogNormal(log(1e-4), 1.5)
     d_α = LogNormal(log(3500), 0.5)
     d_p_mov = Beta(2, 20)
@@ -77,22 +86,23 @@ function find_map_full(data::ModelData, in_zone::BitMatrix; n_samples::Int = 100
         φ_non = rand(rng, d_φ_non)
         δ = rand(rng, d_δ)
         β_duck = rand(rng, d_β_duck)
+        σ = rand(rng, d_σ)
         β_val = rand(rng, d_β)
         α = rand(rng, d_α)
         p_mov = rand(rng, d_p_mov)
 
-        ll = foi_loglik(data, in_zone, t₀, φ_hrz, φ_non, δ, β_duck, β_val, α, p_mov)
+        ll = foi_loglik(data, in_zone, t₀, φ_hrz, φ_non, δ, β_duck, σ, β_val, α, p_mov)
         isinf(ll) && continue
 
         lp = logpdf(d_t₀, t₀) + logpdf(d_φ_hrz, φ_hrz) +
              logpdf(d_φ_non, φ_non) + logpdf(d_δ, δ) +
-             logpdf(d_β_duck, β_duck) + logpdf(d_β, β_val) +
-             logpdf(d_α, α) + logpdf(d_p_mov, p_mov)
+             logpdf(d_β_duck, β_duck) + logpdf(d_σ, σ) +
+             logpdf(d_β, β_val) + logpdf(d_α, α) + logpdf(d_p_mov, p_mov)
         total = ll + lp
         if total > best_ll
             best_ll = total
             best_params = (t₀=t₀, φ_hrz=φ_hrz, φ_non=φ_non, δ=δ,
-                           β_duck=β_duck, β=β_val, α=α, p_mov=p_mov)
+                           β_duck=β_duck, σ=σ, β=β_val, α=α, p_mov=p_mov)
         end
     end
 
@@ -106,6 +116,7 @@ function find_map_full(data::ModelData, in_zone::BitMatrix; n_samples::Int = 100
             "φ_non=$(round(best_params.φ_non, sigdigits=3)), " *
             "δ=$(round(best_params.δ, sigdigits=3)), " *
             "β_duck=$(round(best_params.β_duck, digits=3)), " *
+            "σ=$(round(best_params.σ, sigdigits=3)), " *
             "β=$(round(best_params.β, sigdigits=3)), " *
             "α=$(round(best_params.α, digits=0)), " *
             "p_mov=$(round(best_params.p_mov, digits=4))")
@@ -143,7 +154,7 @@ function run_inference(
         jitter_rng = Random.MersenneTwister(42)
         init_vecs = [base_vec .* (1.0 .+ 0.01 .* randn(jitter_rng, length(base_vec)))
                      for _ in 1:n_chains]
-        sample(model, sampler, MCMCThreads(), n_samples, n_chains;
+        sample(model, sampler, MCMCSerial(), n_samples, n_chains;
                initial_params=init_vecs, progress=true)
     else
         sample(model, sampler, n_samples;
