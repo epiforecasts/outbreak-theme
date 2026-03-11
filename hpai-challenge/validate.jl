@@ -38,7 +38,7 @@ function run_prior_predictive(
         sim=Int[], total_cases=Int[], first_case_day=Int[],
         n_duck=Int[], n_chicken=Int[], duck_ratio=Float64[],
         t₀=Float64[], φ_hrz=Float64[], φ_non=Float64[],
-        δ=Float64[], β_duck=Float64[],
+        δ=Float64[], β_duck=Float64[], σ=Float64[],
     )
     if model_type == :full
         results.β = Float64[]
@@ -62,7 +62,7 @@ function run_prior_predictive(
             :duck_ratio => duck_ratio,
             :t₀ => params.t₀, :φ_hrz => params.φ_hrz,
             :φ_non => params.φ_non, :δ => params.δ,
-            :β_duck => params.β_duck,
+            :β_duck => params.β_duck, :σ => params.σ,
         )
         if model_type == :full
             row[:β] = params.β

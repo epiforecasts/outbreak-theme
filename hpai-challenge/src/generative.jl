@@ -18,14 +18,15 @@ function sample_prior_params(rng::AbstractRNG; model::Symbol = :full)
     φ_non = rand(rng, LogNormal(log(1e-4), 1.0))
     δ = rand(rng, Exponential(1 / 50))
     β_duck = rand(rng, Beta(2, 8))
+    σ = rand(rng, LogNormal(log(0.3), 1.0))
 
     if model == :spillover
-        return (; t₀, φ_hrz, φ_non, δ, β_duck)
+        return (; t₀, φ_hrz, φ_non, δ, β_duck, σ)
     else
         β = rand(rng, LogNormal(log(1e-4), 1.5))
         α = rand(rng, LogNormal(log(3500), 0.5))
         p_mov = rand(rng, Beta(2, 20))
-        return (; t₀, φ_hrz, φ_non, δ, β_duck, β, α, p_mov)
+        return (; t₀, φ_hrz, φ_non, δ, β_duck, σ, β, α, p_mov)
     end
 end
 
@@ -77,6 +78,7 @@ function simulate_epidemic(
     φ_non = params.φ_non
     δ_val = params.δ
     β_duck_val = params.β_duck
+    σ_val = params.σ
 
     has_transmission = haskey(params, :β)
     β_val = has_transmission ? params.β : 0.0
@@ -84,6 +86,19 @@ function simulate_epidemic(
     p_mov_val = has_transmission ? params.p_mov : 0.0
 
     inv_α = 1.0 / α_val
+
+    # Precompute spillover profile ψ(t) — Bateman function (rise then decay)
+    ψ_peak_val = (σ_val / (σ_val + δ_val)) *
+                 exp((δ_val / σ_val) * log(δ_val / (σ_val + δ_val)))
+    ψ_profile = Vector{Float64}(undef, T_end)
+    for t in 1:T_end
+        if t < t₀
+            ψ_profile[t] = 0.0
+        else
+            τ = t - t₀
+            ψ_profile[t] = (1.0 - exp(-σ_val * τ)) * exp(-δ_val * τ) / ψ_peak_val
+        end
+    end
 
     # Precompute infectiousness profile w(τ)
     w = Vector{Float64}(undef, T_end)
@@ -107,7 +122,7 @@ function simulate_epidemic(
     case_days = Int[]
 
     for t in 1:T_end
-        ψt = t < t₀ ? 0.0 : exp(-δ_val * (t - t₀))
+        ψt = ψ_profile[t]
 
         # Check for newly confirmed cases (confirmation = infection + COMPOUND_DELAY)
         # and trigger surveillance zones + preventive culling

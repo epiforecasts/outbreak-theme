@@ -21,26 +21,28 @@ end
 # ── 6. Spillover-only likelihood (Module A + C) ─────────────────────────────
 
 """
-    foi_loglik_spillover(data, in_zone, t₀, φ_hrz, φ_non, δ, β_duck)
+    foi_loglik_spillover(data, in_zone, t₀, φ_hrz, φ_non, δ, β_duck, σ)
 
 Log-likelihood for the spillover-only model (no farm-to-farm transmission).
 Uses bulk aggregation for non-case farm survival.
 """
 function foi_loglik_spillover(
     data::ModelData, in_zone::BitMatrix,
-    t₀, φ_hrz, φ_non, δ, β_duck,
+    t₀, φ_hrz, φ_non, δ, β_duck, σ,
 )
     T = SIM_END
-    RT = typeof(t₀ + φ_hrz + φ_non + δ + β_duck)
+    RT = typeof(t₀ + φ_hrz + φ_non + δ + β_duck + σ)
     ll = zero(RT)
 
-    # Precompute spillover profile ψ(t) for each day
+    # Precompute spillover profile ψ(t) — Bateman function (rise then decay)
+    ψ_peak_val = (σ / (σ + δ)) * exp((δ / σ) * log(δ / (σ + δ)))
     ψ = Vector{RT}(undef, T)
     @inbounds for t in 1:T
         if t < t₀
             ψ[t] = zero(RT)
         else
-            ψ[t] = exp(-δ * (t - t₀))
+            τ = t - t₀
+            ψ[t] = (one(RT) - exp(-σ * τ)) * exp(-δ * τ) / ψ_peak_val
         end
     end
 
@@ -124,7 +126,7 @@ end
 # ── 7. Full likelihood (Module A + B + C) ────────────────────────────────────
 
 """
-    foi_loglik(data, in_zone, t₀, φ_hrz, φ_non, δ, β_duck, β, α, p_mov)
+    foi_loglik(data, in_zone, t₀, φ_hrz, φ_non, δ, β_duck, σ, β, α, p_mov)
 
 Full log-likelihood including spillover, spatial transmission, and movement.
 
@@ -137,17 +139,23 @@ Strategy:
 """
 function foi_loglik(
     data::ModelData, in_zone::BitMatrix,
-    t₀, φ_hrz, φ_non, δ, β_duck, β_val, α, p_mov,
+    t₀, φ_hrz, φ_non, δ, β_duck, σ, β_val, α, p_mov,
 )
     T = SIM_END
-    RT = typeof(t₀ + φ_hrz + φ_non + δ + β_duck + β_val + α + p_mov)
+    RT = typeof(t₀ + φ_hrz + φ_non + δ + β_duck + σ + β_val + α + p_mov)
     ll = zero(RT)
     zone_mult = RT(1.0 - EPSILON)
 
-    # Precompute spillover profile
+    # Precompute spillover profile — Bateman function (rise then decay)
+    ψ_peak_val = (σ / (σ + δ)) * exp((δ / σ) * log(δ / (σ + δ)))
     ψ = Vector{RT}(undef, T)
     @inbounds for t in 1:T
-        ψ[t] = t < t₀ ? zero(RT) : exp(-δ * (t - t₀))
+        if t < t₀
+            ψ[t] = zero(RT)
+        else
+            τ = t - t₀
+            ψ[t] = (one(RT) - exp(-σ * τ)) * exp(-δ * τ) / ψ_peak_val
+        end
     end
 
     # Precompute infectiousness w(τ) for each possible delay
