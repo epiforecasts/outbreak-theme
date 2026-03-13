@@ -26,12 +26,18 @@ w(τ), where τ is time since infection, follows a saturating form:
     w(τ) = 0                              if τ < τ_min
     w(τ) = 1 − exp(−r · (τ − τ_min))     if τ ≥ τ_min
 
-where r = 1.0/day is the within-farm growth rate and τ_min = 1 day is a
-hard latent period. This is informed by mortality ledgers showing
-consistent exponential mortality growth across the three example farms.
+where r = 1.0/day is the within-farm growth rate and τ_min = 1 day is the
+minimum delay before a farm contributes to onward transmission. This is
+informed by mortality ledgers showing consistent exponential mortality
+growth across the three example farms.
 
-A farm is infectious from τ_min after infection until its removal time
-(culling). Because w(τ) is increasing, an extra day before culling adds
+Note: τ_min and μ_E (§2) serve different purposes. τ_min is the hard
+latent period in the transmission kernel — farms cannot transmit before
+τ_min days post-infection. μ_E = 3.5 days is the mean incubation period
+used to back-calculate infection times from observed suspicion dates.
+Both are fixed; μ_E is not used in the hazard computation.
+
+Because w(τ) is increasing, an extra day before culling adds
 disproportionately to transmission.
 
 ---
