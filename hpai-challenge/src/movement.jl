@@ -31,26 +31,35 @@ function fit_gravity_model(pop::DataFrame, mov_df::DataFrame; verbose::Bool = tr
     src_idx = findall(pop.production .== "broiler_1")
     dst_idx = findall(pop.production .== "broiler_2")
 
+    # Filter to broiler_1 → broiler_2 movements only
+    src_set = Set(pop.farm_id[src_idx])
+    dst_set = Set(pop.farm_id[dst_idx])
+
     # Compute movement distances
     distances = Float64[]
+    n_filtered = 0
+    filtered_dates = Set{eltype(mov_df.date)}()
     for row in eachrow(mov_df)
         src = get(id_to_idx, row.source_farm, nothing)
         dst = get(id_to_idx, row.dest_farm, nothing)
         (src === nothing || dst === nothing) && continue
+        (row.source_farm in src_set && row.dest_farm in dst_set) || continue
+        n_filtered += 1
+        push!(filtered_dates, row.date)
         dx = pop.x[src] - pop.x[dst]
         dy = pop.y[src] - pop.y[dst]
         push!(distances, sqrt(dx^2 + dy^2))
     end
 
-    isempty(distances) && error("No valid movements found; cannot fit gravity model.")
+    isempty(distances) && error("No valid broiler_1→broiler_2 movements found; cannot fit gravity model.")
 
     # MLE for exponential kernel with 2D pair density: κ = mean(d) / 2
     κ = mean(distances) / 2.0
+    (!isfinite(κ) || κ <= 0) && error("Fitted κ is invalid ($κ); check movement distances.")
 
     # Daily rate
-    n_dates = length(unique(mov_df.date))
-    n_dates == 0 && error("Movement data has no valid dates.")
-    daily_rate = nrow(mov_df) / Float64(n_dates)
+    n_dates = length(filtered_dates)
+    daily_rate = n_filtered / Float64(n_dates)
 
     # Source weights ∝ capacity
     src_cap = Float64.(pop.capacity[src_idx])
