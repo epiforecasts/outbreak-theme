@@ -49,6 +49,8 @@ function simulate_forward(
     α_val = has_transmission ? params.α : 1.0
     p_mov_val = has_transmission ? params.p_mov : 0.0
 
+    (σ_val <= 0 || δ_val <= 0) && error("σ and δ must be positive (got σ=$σ_val, δ=$δ_val)")
+    has_transmission && α_val <= 0 && error("α must be positive (got $α_val)")
     inv_α = 1.0 / α_val
 
     # Precompute spillover profile ψ(t) — Bateman function (rise then decay)
