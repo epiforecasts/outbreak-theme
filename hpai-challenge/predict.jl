@@ -320,7 +320,7 @@ function write_species_contribution(draws::Vector, pop::DataFrame, data::ModelDa
     )
 
     for params in draws
-        bd = params.β_duck
+        bd = max(params.β_duck, 1e-6)
         total_susc = f_chicken * 1.0 + f_duck * bd
         chicken_share = (f_chicken * 1.0) / total_susc
         duck_share = (f_duck * bd) / total_susc

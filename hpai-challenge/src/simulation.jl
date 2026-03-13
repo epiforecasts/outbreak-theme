@@ -23,6 +23,9 @@ function simulate_forward(
     pred_movements::Union{Nothing, Vector{Vector{Tuple{Int,Int}}}} = nothing,
     rng::AbstractRNG = Random.GLOBAL_RNG,
 )
+    if pred_movements !== nothing && length(pred_movements) < n_days_pred
+        error("pred_movements must have at least $n_days_pred days, got $(length(pred_movements))")
+    end
     N = data.N
     T_end = SIM_END + n_days_pred
 

@@ -42,11 +42,15 @@ function fit_gravity_model(pop::DataFrame, mov_df::DataFrame; verbose::Bool = tr
         push!(distances, sqrt(dx^2 + dy^2))
     end
 
+    isempty(distances) && error("No valid movements found; cannot fit gravity model.")
+
     # MLE for exponential kernel with 2D pair density: κ = mean(d) / 2
     κ = mean(distances) / 2.0
 
     # Daily rate
-    daily_rate = nrow(mov_df) / Float64(length(unique(mov_df.date)))
+    n_dates = length(unique(mov_df.date))
+    n_dates == 0 && error("Movement data has no valid dates.")
+    daily_rate = nrow(mov_df) / Float64(n_dates)
 
     # Source weights ∝ capacity
     src_cap = Float64.(pop.capacity[src_idx])
@@ -81,6 +85,7 @@ function generate_movements(
 )
     n_src = length(grav.src_idx)
     n_dst = length(grav.dst_idx)
+    (n_src == 0 || n_dst == 0) && return [Tuple{Int,Int}[] for _ in 1:n_days]
     src_total = grav.src_cumw[end]
     inv_κ = 1.0 / grav.κ
 
