@@ -61,7 +61,7 @@ end
 """
     find_map_full(data, in_zone; n_samples=1000) -> NamedTuple
 
-Random search from prior for the full 8-parameter model.
+Random search from prior for the full 9-parameter model.
 Returns a NamedTuple suitable for chain initialisation.
 """
 function find_map_full(data::ModelData, in_zone::BitMatrix; n_samples::Int = 1000)
