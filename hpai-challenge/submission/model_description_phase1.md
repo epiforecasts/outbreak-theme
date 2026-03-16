@@ -122,8 +122,8 @@ Infection probability: P(infected) = 1 − exp(−λ_j(t))
 
 | Symbol | Description | Unit | Value | Source |
 |--------|-------------|------|-------|--------|
-| μ_E | Latent period | days | 3.5 | HPAI literature |
-| μ_ID | Detection delay | days | 5.0 | HPAI literature |
+| μ_E | Latent period | days | 3.5 | HPAI literature [4, 5, 6] |
+| μ_ID | Detection delay | days | 5.0 | HPAI literature [4, 5, 6] |
 | β_chicken | Chicken susceptibility | — | 1.0 | Reference category |
 | r | Infectiousness growth rate | /day | 1.0 | Mortality ledgers (3 farms) |
 | τ_min | Hard latent period | day | 1 | Minimum before infectiousness |
@@ -280,3 +280,6 @@ Approximately 8–10 person-days over the challenge period, including model deve
 1. Boender GJ, et al. (2007). Risk maps for the spread of highly pathogenic avian influenza in poultry. PLoS Computational Biology, 3(4), e71.
 2. Tildesley MJ, et al. (2006). Optimal reactive vaccination strategies for a foot-and-mouth outbreak in the UK. Nature, 440(7080), 83–86.
 3. Keeling MJ, et al. (2001). Dynamics of the 2001 UK foot and mouth epidemic. Science, 294(5543), 813–817.
+4. Davis CN, et al. (2026). A modelling assessment of the impact of control measures on highly pathogenic avian influenza transmission in poultry in Great Britain. PLoS Computational Biology, 22(1), e1013874.
+5. Sharkey KJ, et al. (2008). Epidemiological consequences of an incursion of highly pathogenic H5N1 avian influenza into the British poultry flock. Proceedings of the Royal Society B, 275(1630), 19–28.
+6. Dorigatti I, et al. (2010). Modelling the spatial spread of H7N1 avian influenza virus among poultry farms in Italy. Epidemics, 2(1), 29–35.
