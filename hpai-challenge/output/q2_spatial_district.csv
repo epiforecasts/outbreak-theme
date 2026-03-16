@@ -1,0 +1,541 @@
+county,district,n_farms,n_existing_cases,expected_new_cases,max_farm_risk,n_farms_at_risk
+Berks,Port Matilda,50,1,1.1,0.052,49
+Luzerne,Morrisville,40,0,0.96,0.058,40
+Berks,Irvington,38,0,0.89,0.058,38
+Luzerne,Fredon,53,0,0.85,0.044,51
+Berks,Barnegat Light,39,1,0.8,0.05,38
+Berks,Warwick,39,0,0.75,0.044,38
+Luzerne,Hardyston,42,1,0.69,0.038,41
+Berks,Warren,34,0,0.66,0.048,34
+Berks,Middlesex,20,0,0.63,0.052,20
+Allegheny,Lacey,31,0,0.58,0.048,31
+Luzerne,Pine Hill,41,0,0.5,0.046,33
+Susquehanna,Montague,17,0,0.5,0.054,17
+Susquehanna,Beach Haven,17,0,0.47,0.054,17
+Susquehanna,Cranford,28,0,0.46,0.05,28
+Allegheny,Princeton,22,0,0.44,0.05,22
+Allegheny,Union,27,0,0.43,0.062,27
+Susquehanna,Amwell,20,0,0.4,0.042,20
+Allegheny,Orange Village,24,0,0.4,0.044,22
+Luzerne,Teaneck,27,3,0.4,0.056,21
+Indiana,Collingswood,24,0,0.4,0.05,24
+Berks,Belmar,33,1,0.39,0.036,28
+Allegheny,Toms River,39,0,0.39,0.046,32
+Luzerne,Medford,40,0,0.38,0.044,36
+Fulton,Secaucus,80,0,0.38,0.018,57
+Allegheny,Durham,23,0,0.37,0.046,22
+Allegheny,Orange,28,0,0.37,0.044,28
+Berks,Berlin,37,4,0.37,0.028,28
+Allegheny,Burlington,20,0,0.37,0.05,20
+Indiana,Robbinsville,15,0,0.36,0.042,15
+Allegheny,Harris,15,0,0.34,0.074,14
+Indiana,Stafford,13,0,0.34,0.046,13
+Fulton,Trenton,57,0,0.33,0.022,50
+Berks,Point Pleasant,43,0,0.33,0.048,41
+Indiana,Clayton,15,0,0.33,0.054,15
+Allegheny,Marlborough,26,0,0.33,0.044,25
+Susquehanna,Moorestown,20,0,0.32,0.04,20
+Indiana,Lawrence,16,0,0.32,0.058,15
+Allegheny,Spring Lake Heights,18,0,0.31,0.044,17
+Berks,Jersey City,13,0,0.31,0.042,13
+Luzerne,Paulsboro,47,0,0.31,0.018,41
+Susquehanna,Kingwood,24,4,0.3,0.032,17
+Indiana,Wall,17,1,0.29,0.05,16
+Lancaster,Lansdale,64,0,0.29,0.016,49
+Berks,Taylor,20,1,0.29,0.036,19
+Susquehanna,Lumberton,17,0,0.29,0.05,14
+Indiana,Glen Gardner,12,0,0.28,0.04,12
+Allegheny,Brigantine,22,1,0.28,0.036,20
+Susquehanna,Flemington,14,0,0.28,0.046,14
+Berks,Merion,15,0,0.28,0.046,15
+Fulton,Logan,75,0,0.27,0.014,50
+Allegheny,Cliffside Park,55,0,0.26,0.02,42
+Fulton,Pleasantville,47,0,0.26,0.018,40
+Indiana,Fairview,14,0,0.26,0.042,13
+Susquehanna,Sea Girt,13,0,0.26,0.052,13
+Allegheny,Oldmans,22,0,0.26,0.038,19
+Berks,Bayonne,22,1,0.26,0.032,21
+Indiana,Sandyston,25,0,0.26,0.028,25
+Fulton,Harding,61,0,0.25,0.016,48
+Fulton,Newfield,59,0,0.25,0.016,45
+Cumberland,Point Pleasant Beach,39,0,0.25,0.016,33
+Allegheny,Guttenberg,50,0,0.25,0.018,35
+Blair,Walpack,43,0,0.25,0.016,38
+Allegheny,Marion,33,0,0.24,0.034,29
+Indiana,Wharton,20,1,0.24,0.028,18
+Allegheny,Colts Neck,22,1,0.24,0.03,20
+Allegheny,Fair Haven,15,0,0.24,0.044,15
+Lancaster,Maplewood,14,0,0.23,0.042,14
+Allegheny,Rockleigh,39,0,0.23,0.042,32
+Berks,Rutherford,16,0,0.23,0.028,16
+Allegheny,Leonia,27,0,0.23,0.03,25
+Allegheny,Long Hill,34,0,0.22,0.052,24
+Fulton,Linwood,48,0,0.22,0.016,39
+Indiana,Morristown,27,3,0.22,0.026,23
+Cumberland,Wildwood Crest,40,0,0.22,0.016,34
+Susquehanna,Closter,32,4,0.22,0.038,20
+Allegheny,Demarest,76,1,0.22,0.014,47
+Indiana,Lakewood,21,0,0.22,0.03,17
+Luzerne,Gwynedd,29,0,0.21,0.034,27
+Indiana,Brielle,14,1,0.21,0.034,11
+Indiana,Berkeley,10,0,0.21,0.046,10
+Luzerne,New Milford,34,0,0.21,0.014,31
+Allegheny,Aberdeen,70,0,0.21,0.012,50
+Fulton,Hightstown,48,0,0.21,0.022,32
+Fulton,Hawthorne,42,0,0.2,0.014,34
+Blair,Jefferson,37,0,0.2,0.014,32
+Susquehanna,Pennsauken,11,0,0.2,0.052,11
+Indiana,Nockamixon,13,0,0.2,0.032,13
+Blair,Quinton,46,0,0.19,0.014,34
+Fulton,Ocean,57,0,0.19,0.012,42
+Cumberland,Mount Olive,42,0,0.19,0.016,31
+Indiana,Allentown,7,0,0.19,0.038,7
+Berks,Harrison,35,0,0.19,0.016,29
+Indiana,Wales,20,1,0.19,0.028,19
+Indiana,Corbin City,17,4,0.19,0.038,12
+Susquehanna,Langhorne,9,0,0.19,0.052,9
+Fulton,Chesilhurst,22,0,0.19,0.044,16
+Fulton,Washington,34,0,0.18,0.016,28
+Mercer,Lopatcong,29,0,0.18,0.026,26
+Susquehanna,Keansburg,12,1,0.18,0.038,11
+Fulton,Hulmeville,48,0,0.18,0.016,33
+Venango,Tewksbury,20,0,0.18,0.018,18
+Lancaster,Matawan,19,0,0.18,0.036,17
+Indiana,Milford,9,0,0.17,0.042,7
+Blair,Branchburg,29,0,0.17,0.018,24
+Allegheny,Farmingdale,14,0,0.17,0.028,13
+Susquehanna,Wrightstown,9,0,0.17,0.04,9
+Allegheny,Manville,8,0,0.17,0.042,8
+Allegheny,Snow Shoe,12,0,0.17,0.032,12
+Susquehanna,Mount Holly,15,1,0.17,0.028,11
+Lancaster,Far Hills,32,0,0.16,0.014,29
+Fulton,Mine Hill,33,0,0.16,0.016,25
+Fulton,Providence,31,0,0.16,0.016,29
+Indiana,Greenwich,14,0,0.16,0.034,12
+Indiana,Stockton,16,1,0.16,0.024,13
+Susquehanna,Stone Harbor,7,0,0.16,0.052,7
+Blair,Carlstadt,31,0,0.16,0.016,27
+Allegheny,Passaic,11,0,0.16,0.034,11
+Susquehanna,Northfield,6,0,0.15,0.046,6
+Susquehanna,Cape May Point,10,0,0.15,0.04,10
+Mifflin,Hainesport,29,0,0.15,0.014,24
+Indiana,Neptune City,8,0,0.15,0.034,7
+Fulton,Mountain Lakes,30,0,0.15,0.014,25
+Mifflin,Oxford,33,0,0.15,0.02,22
+Fulton,Dublin,30,0,0.15,0.016,22
+Susquehanna,Unionville,9,0,0.15,0.044,9
+Blair,Ho-Ho-Kus,28,0,0.15,0.016,23
+Berks,Plainfield,29,0,0.15,0.014,24
+Blair,Pompton Lakes,34,0,0.15,0.018,25
+Fulton,Lincoln Park,28,0,0.15,0.018,22
+Lancaster,Raritan,29,0,0.15,0.014,22
+Indiana,Beachwood,8,0,0.15,0.05,8
+Susquehanna,Elizabeth,14,1,0.15,0.028,10
+Mercer,Milltown,23,0,0.15,0.026,20
+Berks,Elmer,30,0,0.15,0.012,23
+Indiana,Pilesgrove,10,0,0.15,0.052,10
+Mifflin,Sussex,30,0,0.14,0.016,20
+Fulton,Verona,21,0,0.14,0.026,18
+Cumberland,Hackensack,21,0,0.14,0.024,19
+Mercer,Monmouth Beach,29,0,0.14,0.018,24
+Lancaster,Tuckerton,28,0,0.14,0.014,23
+Cumberland,Mendham,35,0,0.14,0.014,25
+Cumberland,Rumson,28,0,0.14,0.014,23
+Indiana,Millburn,6,0,0.14,0.044,6
+Cumberland,Alexandria,23,0,0.14,0.018,19
+Blair,Alloway,20,0,0.14,0.018,17
+Blair,Pottsgrove,26,0,0.14,0.018,19
+Allegheny,Peapack-Gladstone,18,2,0.14,0.02,14
+Fulton,Roselle,30,0,0.14,0.018,23
+Lycoming,Delran,19,0,0.14,0.02,16
+Susquehanna,Parsippany-Troy Hills,16,0,0.13,0.028,14
+Fulton,Clifton,41,0,0.13,0.012,28
+Berks,Franklin Lakes,21,0,0.13,0.018,19
+Susquehanna,Galloway,15,1,0.13,0.028,13
+Berks,Stow Creek,11,1,0.13,0.03,9
+Susquehanna,Lyndhurst,64,6,0.13,0.008,34
+Berks,Bernardsville,16,1,0.13,0.034,13
+Blair,Woodbury,21,0,0.13,0.014,17
+Venango,Totowa,23,0,0.13,0.02,19
+Lycoming,Marlboro,25,0,0.13,0.012,20
+Berks,Woodbridge,9,0,0.13,0.034,9
+Cumberland,Hammonton,41,1,0.13,0.01,25
+Mifflin,Long Branch,23,0,0.13,0.014,20
+Susquehanna,Pennington,6,0,0.13,0.052,6
+Susquehanna,Surf City,7,0,0.13,0.046,7
+Blair,Vineland,21,0,0.12,0.022,18
+Blair,Somerville,20,0,0.12,0.018,17
+Luzerne,Cedar Grove,21,0,0.12,0.014,17
+Blair,Butler,26,0,0.12,0.016,19
+Luzerne,Woodstown,18,0,0.12,0.016,17
+Luzerne,Douglass,24,0,0.12,0.012,19
+Berks,Little Falls,40,0,0.12,0.01,31
+Indiana,Boonton,10,0,0.12,0.032,10
+Schuylkill,Kenilworth,18,0,0.12,0.016,17
+Cumberland,Estell Manor,26,0,0.12,0.018,20
+Mifflin,Holland,19,0,0.12,0.014,18
+Fulton,Amboy,25,0,0.12,0.01,23
+Schuylkill,Frenchtown,20,0,0.12,0.014,19
+Berks,Liberty,38,4,0.11,0.014,23
+Fulton,Gloucester City,27,0,0.11,0.014,23
+Susquehanna,Tinicum,5,0,0.11,0.034,5
+Cumberland,Philipsburg,19,0,0.11,0.014,15
+Lancaster,Riegelsville,24,0,0.11,0.01,22
+Schuylkill,Wanaque,20,0,0.11,0.012,18
+Lycoming,Maple Shade,16,0,0.11,0.018,13
+Cumberland,Camden,18,0,0.11,0.016,13
+Lancaster,Bloomingdale,20,0,0.11,0.018,18
+Lycoming,Lindenwold,27,0,0.11,0.014,22
+Indiana,Huston,5,0,0.11,0.04,5
+Berks,Manasquan,6,0,0.11,0.03,6
+Venango,Ambler,23,0,0.11,0.024,13
+Cumberland,Lawnside,21,0,0.11,0.014,16
+Lancaster,Florence,27,0,0.11,0.016,19
+Susquehanna,Commercial,31,1,0.11,0.012,20
+Lancaster,Scotch Plains,24,0,0.11,0.018,17
+Lycoming,Haddonfield,17,0,0.11,0.014,13
+Indiana,Palisades Park,9,0,0.11,0.034,8
+Cumberland,Longport,19,0,0.11,0.016,17
+Indiana,Bedminster,4,0,0.1,0.042,4
+Mifflin,Caldwell,21,0,0.1,0.014,18
+Lancaster,Branchville,30,1,0.1,0.018,21
+Lancaster,Westville,16,0,0.1,0.018,14
+Mifflin,Riverton,21,0,0.1,0.014,19
+Susquehanna,Frelinghuysen,8,0,0.1,0.03,8
+Cumberland,Ferguson,17,0,0.1,0.022,12
+Indiana,Woodcliff Lake,12,1,0.1,0.03,10
+Schuylkill,Watchung,19,0,0.1,0.016,15
+Mercer,Chalfont,25,0,0.1,0.014,17
+Berks,Arlington,37,3,0.1,0.012,21
+Luzerne,Haworth,24,0,0.1,0.016,19
+Venango,Ridgewood Village,15,0,0.1,0.012,14
+Lancaster,Emerson,27,0,0.1,0.016,17
+Lancaster,Alloways Creek,27,0,0.1,0.02,21
+Mercer,Metuchen,14,0,0.1,0.016,14
+Mercer,White,14,0,0.1,0.016,13
+Cumberland,Interlaken,18,0,0.1,0.016,16
+Lycoming,New York,20,0,0.1,0.016,17
+Venango,Montville,20,0,0.1,0.012,18
+Blair,New Britain,23,0,0.1,0.014,19
+Berks,Elk,27,0,0.1,0.014,19
+Lycoming,Readington,20,0,0.1,0.014,17
+Indiana,Bryn Athyn,13,1,0.1,0.022,9
+Cumberland,Edison,14,0,0.1,0.016,13
+Venango,Port Republic,16,0,0.1,0.012,15
+Lycoming,Hoboken,21,0,0.1,0.016,15
+Allegheny,Sea Isle City,3,0,0.1,0.036,3
+Mercer,Mount Arlington,19,0,0.1,0.014,17
+Cumberland,Roxbury,37,1,0.1,0.012,24
+Cumberland,Bergenfield,15,0,0.1,0.022,13
+Lancaster,Plumsted,14,0,0.1,0.014,13
+Mercer,Dunellen,20,0,0.1,0.012,16
+Fulton,Sparta,19,0,0.1,0.012,16
+Luzerne,Prospect Park,18,0,0.1,0.016,12
+Indiana,Lafayette,7,0,0.1,0.032,6
+Lycoming,Tavistock,13,0,0.1,0.016,10
+Blair,Stillwater,22,0,0.1,0.018,18
+Cumberland,Harvey Cedars,30,0,0.1,0.02,20
+Fulton,Rockaway,24,0,0.1,0.014,17
+Fulton,Alpha,19,0,0.1,0.016,12
+Schuylkill,State College,20,0,0.1,0.012,16
+Indiana,Allamuchy,6,1,0.1,0.032,5
+Lancaster,Skippack,21,0,0.09,0.018,16
+Blair,Hopatcong,18,0,0.09,0.014,16
+Venango,Red Bank,24,0,0.09,0.014,17
+Luzerne,Old Bridge,25,0,0.09,0.01,19
+Blair,Woodbine,15,0,0.09,0.014,11
+Lycoming,Swedesboro,15,0,0.09,0.018,13
+Berks,Tenafly,39,3,0.09,0.008,22
+Berks,Stratford,28,3,0.09,0.01,18
+Cumberland,Somerdale,21,0,0.09,0.016,17
+Allegheny,Mountainside,12,0,0.09,0.032,10
+Mifflin,Netcong,9,0,0.09,0.018,9
+Indiana,Old Tappan,4,0,0.09,0.032,4
+Venango,Kinnelon,21,0,0.09,0.02,14
+Susquehanna,Newark,24,0,0.09,0.022,17
+Lancaster,Chester,17,0,0.09,0.014,13
+Venango,Weymouth,17,0,0.09,0.016,15
+Schuylkill,Dover,13,0,0.09,0.016,10
+Cumberland,Belvidere,20,0,0.09,0.016,14
+Venango,Eastampton,15,0,0.09,0.018,12
+Indiana,Buena Vista,10,1,0.09,0.026,8
+Schuylkill,Glassboro,21,0,0.09,0.012,19
+Berks,Carteret,30,2,0.09,0.012,18
+Mercer,Atlantic City,18,0,0.09,0.014,13
+Lycoming,Lebanon,16,0,0.09,0.014,13
+Lancaster,Kearny,16,0,0.09,0.016,14
+Lancaster,Norriton,23,1,0.09,0.014,14
+Mifflin,Springfield,9,0,0.09,0.02,8
+Mifflin,Westfield,13,0,0.09,0.014,12
+Schuylkill,Summit,11,0,0.09,0.016,10
+Mercer,Harrington Park,16,0,0.09,0.014,15
+Berks,Manalapan,25,2,0.09,0.012,17
+Lancaster,Park Ridge,10,0,0.09,0.028,7
+Mifflin,Cherry Hill,13,0,0.09,0.016,11
+Lancaster,Union Beach,16,0,0.09,0.018,14
+Schuylkill,Brick,13,0,0.09,0.018,12
+Indiana,Little Ferry,9,1,0.09,0.022,7
+Schuylkill,Potter,12,0,0.09,0.014,11
+Luzerne,Curtin,13,0,0.09,0.018,11
+Luzerne,Norristown,17,0,0.08,0.018,13
+Blair,Woodbury Heights,16,0,0.08,0.018,14
+Luzerne,Tullytown,15,0,0.08,0.016,13
+Susquehanna,Barrington,11,0,0.08,0.036,11
+Lycoming,Limerick,14,0,0.08,0.014,10
+Lycoming,New Hanover,12,0,0.08,0.016,12
+Allegheny,Ridgefield Park Village,3,0,0.08,0.04,3
+Mifflin,Edgewater,31,0,0.08,0.01,16
+Mercer,Oceanport,13,0,0.08,0.018,11
+Venango,New Brunswick,9,0,0.08,0.016,9
+Schuylkill,Hillsborough,10,0,0.08,0.014,10
+Cumberland,Highlands,16,0,0.08,0.018,10
+Berks,Waterford,19,0,0.08,0.01,16
+Susquehanna,Egg Harbor,11,0,0.08,0.022,10
+Indiana,Ship Bottom,12,1,0.08,0.028,10
+Indiana,Paterson,13,2,0.08,0.016,10
+Schuylkill,Allendale,14,0,0.08,0.014,12
+Mercer,Ogdensburg,15,0,0.08,0.012,11
+Berks,Sea Bright,22,0,0.08,0.018,16
+Cumberland,Bellmawr,13,0,0.08,0.02,11
+Cumberland,Spring Lake,12,0,0.08,0.016,11
+Venango,Deptford,13,0,0.08,0.016,10
+Mercer,Weehawken,9,0,0.08,0.018,9
+Cumberland,Bridgeton,17,0,0.08,0.014,14
+Mercer,Clinton,12,0,0.08,0.014,10
+Indiana,Paramus,4,0,0.08,0.026,4
+Mifflin,Middletown,14,0,0.08,0.018,12
+Lycoming,Haledon,12,0,0.08,0.016,11
+Venango,Cinnaminson,13,0,0.08,0.014,10
+Susquehanna,Palmyra,17,0,0.08,0.012,13
+Susquehanna,Englewood,4,0,0.08,0.04,4
+Berks,Freehold,25,0,0.08,0.012,17
+Schuylkill,Audubon Park,25,0,0.08,0.008,18
+Venango,Eatontown,15,0,0.08,0.012,12
+Berks,Helmetta,23,0,0.08,0.008,16
+Lancaster,Alpine,8,0,0.08,0.024,8
+Susquehanna,Green,3,0,0.08,0.038,3
+Mifflin,Hillside,12,0,0.08,0.014,10
+Lancaster,Shiloh,15,0,0.07,0.012,13
+Mercer,Lambertville,16,0,0.07,0.016,10
+Cumberland,Pequannock,15,0,0.07,0.016,12
+Schuylkill,Cape May,12,0,0.07,0.014,10
+Berks,Belleville,6,1,0.07,0.028,5
+Luzerne,Roselle Park,15,0,0.07,0.01,14
+Cumberland,Frederick,12,0,0.07,0.012,12
+Berks,Sayreville,25,3,0.07,0.012,16
+Lycoming,Barnegat,13,0,0.07,0.012,10
+Mercer,Bass River,16,0,0.07,0.014,13
+Venango,Plainsboro,14,0,0.07,0.012,12
+Cumberland,Montvale,26,0,0.07,0.008,18
+Mifflin,Penns Grove,11,0,0.07,0.014,10
+Venango,Clark,14,0,0.07,0.014,13
+Schuylkill,Highland Park,11,0,0.07,0.02,10
+Mifflin,Stanhope,16,0,0.07,0.012,12
+Venango,Wildwood,14,0,0.07,0.018,11
+Schuylkill,Victory Gardens,17,0,0.07,0.014,12
+Schuylkill,Linden,12,0,0.07,0.012,11
+Berks,Pennsville,7,1,0.07,0.026,5
+Mercer,Wayne,18,0,0.07,0.012,15
+Lycoming,Monroe,18,0,0.07,0.012,14
+Cumberland,New Providence,9,0,0.07,0.016,6
+Luzerne,Merchantville,14,0,0.07,0.014,10
+Schuylkill,Salem,15,0,0.07,0.012,12
+Indiana,Ewing,13,0,0.07,0.012,11
+Blair,Loch Arbour Village,13,0,0.07,0.014,11
+Lycoming,Woolwich,13,0,0.07,0.014,11
+Luzerne,River,13,0,0.07,0.016,11
+Mifflin,Chesterfield,11,0,0.07,0.02,10
+Mercer,Benner,17,0,0.07,0.016,12
+Schuylkill,Bethlehem,12,0,0.07,0.018,10
+Fulton,Hilltown,11,0,0.07,0.012,11
+Mifflin,Morris Plains,20,0,0.07,0.012,12
+Venango,Moreland,11,0,0.07,0.014,10
+Luzerne,Union City,17,0,0.07,0.01,15
+Lycoming,Absecon,24,0,0.06,0.014,17
+Susquehanna,Nutley,3,0,0.06,0.052,3
+Lycoming,Cranbury,12,0,0.06,0.012,10
+Susquehanna,Dumont,3,0,0.06,0.04,3
+Blair,Hatboro,14,0,0.06,0.014,11
+Luzerne,Riverdale,14,0,0.06,0.014,11
+Cumberland,Jenkintown,9,0,0.06,0.014,8
+Schuylkill,Neptune,15,0,0.06,0.016,12
+Schuylkill,Woodlynne,7,0,0.06,0.014,7
+Cumberland,Hillsdale,13,0,0.06,0.01,10
+Schuylkill,Worth,11,0,0.06,0.012,10
+Berks,Ocean City,33,5,0.06,0.012,14
+Susquehanna,Montgomery,15,0,0.06,0.014,11
+Venango,Hamilton,10,0,0.06,0.012,10
+Blair,Ventnor City,15,0,0.06,0.02,10
+Lancaster,Mount Ephraim,18,0,0.06,0.01,12
+Blair,Audubon,10,0,0.06,0.012,8
+Lycoming,Mansfield,14,1,0.06,0.02,11
+Mifflin,Elsinboro,13,0,0.06,0.012,9
+Fulton,Byram,11,0,0.06,0.012,9
+Cumberland,Manchester,11,0,0.06,0.018,9
+Fulton,Falls,17,0,0.06,0.016,8
+Blair,Bradley Beach,17,0,0.06,0.012,12
+Lycoming,Island Heights,15,0,0.06,0.016,10
+Mercer,Middle,13,0,0.06,0.014,8
+Fulton,Delaware,14,0,0.06,0.01,12
+Berks,Chatham,22,0,0.06,0.008,14
+Schuylkill,Rahway,9,0,0.06,0.018,8
+Cumberland,Avon-by-the-Sea,13,0,0.06,0.008,12
+Berks,Hazlet,25,2,0.06,0.008,16
+Blair,Denville,16,0,0.06,0.01,11
+Schuylkill,Englewood Cliffs,7,0,0.06,0.016,5
+Berks,Wallington,16,1,0.06,0.012,10
+Indiana,Bridgewater,2,0,0.06,0.046,2
+Mifflin,Piscataway,9,0,0.06,0.012,7
+Venango,Maurice River,20,0,0.06,0.014,11
+Mifflin,Elmwood Park,9,0,0.06,0.014,7
+Susquehanna,Knowlton,3,0,0.06,0.032,3
+Lancaster,High Bridge,13,0,0.06,0.016,9
+Cumberland,Ringwood,10,0,0.05,0.012,7
+Venango,Laurel Springs,11,0,0.05,0.01,10
+Luzerne,Lakehurst,10,0,0.05,0.012,9
+Cumberland,Perkiomen,13,0,0.05,0.014,10
+Mifflin,Folsom,14,0,0.05,0.006,13
+Fulton,Somers Point,10,0,0.05,0.014,8
+Cumberland,Medford Lakes,13,0,0.05,0.016,10
+Venango,Long Beach,10,0,0.05,0.014,9
+Mifflin,River Vale,10,0,0.05,0.012,9
+Mercer,Deerfield,11,0,0.05,0.02,7
+Berks,Haddon,13,0,0.05,0.008,11
+Blair,Haddon Heights,11,0,0.05,0.012,7
+Mifflin,Roosevelt,13,0,0.05,0.01,9
+Luzerne,Fieldsboro,9,0,0.05,0.01,8
+Venango,Woodland Park,10,0,0.05,0.01,9
+Lycoming,Montclair,8,0,0.05,0.01,7
+Indiana,Fort Lee,2,0,0.05,0.038,2
+Fulton,Green Lane,12,0,0.05,0.01,10
+Cumberland,Moonachie,11,0,0.05,0.014,9
+Indiana,Jackson,4,0,0.05,0.022,4
+Cumberland,Millstone,11,0,0.05,0.012,8
+Schuylkill,Blairstown,7,0,0.05,0.012,5
+Schuylkill,Oaklyn,11,0,0.05,0.016,9
+Mifflin,Margate City,10,0,0.05,0.018,7
+Luzerne,Andover,10,0,0.05,0.012,7
+Berks,Bogota,14,0,0.05,0.012,9
+Schuylkill,Fanwood,14,0,0.05,0.014,10
+Schuylkill,Independence,11,0,0.05,0.01,7
+Cumberland,Bergen,10,0,0.04,0.014,6
+Cumberland,Magnolia,12,0,0.04,0.01,11
+Venango,River Edge,8,0,0.04,0.022,6
+Mifflin,Jamesburg,6,0,0.04,0.018,5
+Blair,Hopewell,11,0,0.04,0.012,8
+Cumberland,Windsor,11,0,0.04,0.01,10
+Mercer,Mannington,8,0,0.04,0.012,7
+Susquehanna,Winfield,4,1,0.04,0.024,3
+Lycoming,Califon,10,0,0.04,0.01,7
+Cumberland,Wyckoff,11,0,0.04,0.01,9
+Lycoming,Horsham,19,0,0.04,0.006,13
+Lycoming,Avalon,23,2,0.04,0.01,12
+Susquehanna,Shamong,2,0,0.04,0.024,2
+Mercer,Greenville,9,0,0.04,0.018,7
+Luzerne,Morris,7,0,0.04,0.012,5
+Cumberland,Deal,10,0,0.04,0.008,9
+Cumberland,Shrewsbury,7,0,0.04,0.012,6
+Cumberland,Essex Fells,5,0,0.04,0.016,4
+Mifflin,Livingston,7,0,0.04,0.012,6
+Berks,Perkasie,4,0,0.04,0.022,4
+Blair,Glen Rock,6,0,0.04,0.012,4
+Berks,Bellefonte,16,2,0.04,0.01,8
+Mifflin,Wood-Ridge,4,0,0.04,0.022,4
+Lancaster,Waldwick,9,0,0.04,0.016,6
+Lancaster,Brunswick,8,0,0.04,0.01,6
+Blair,Harmony,6,0,0.04,0.016,6
+Mifflin,Englishtown,9,0,0.04,0.012,6
+Lycoming,National Park,7,0,0.04,0.012,6
+Lancaster,Mantua,9,0,0.04,0.008,7
+Lancaster,Howell,9,0,0.04,0.022,8
+Schuylkill,Hamburg,8,0,0.04,0.008,7
+Luzerne,Franklin,9,0,0.03,0.01,7
+Blair,Tabernacle,11,0,0.03,0.01,9
+Cumberland,Bound Brook,6,0,0.03,0.016,5
+Mercer,Atlantic Highlands,9,0,0.03,0.014,5
+Mifflin,Seaside Heights,5,0,0.03,0.01,5
+Susquehanna,Fair Lawn,6,2,0.03,0.018,4
+Mifflin,Wenonah,14,0,0.03,0.006,11
+Lancaster,Runnemede,6,0,0.03,0.01,5
+Susquehanna,Bernards,1,0,0.03,0.03,1
+Mifflin,Downe,8,0,0.03,0.01,7
+Lancaster,Bay Head,12,1,0.03,0.008,7
+Schuylkill,Bloomfield,7,0,0.03,0.008,6
+Lycoming,Willingboro,10,0,0.03,0.008,7
+Berks,Lake Como,11,0,0.03,0.006,8
+Berks,Fairfield,13,1,0.03,0.01,5
+Mercer,Roseland,7,0,0.03,0.008,5
+Lycoming,Berkeley Heights,15,0,0.03,0.006,8
+Mifflin,Penndel,10,0,0.03,0.008,7
+Blair,Perth Amboy,5,0,0.03,0.008,5
+Schuylkill,Westampton,5,0,0.03,0.01,4
+Mifflin,Cresskill,4,0,0.03,0.016,3
+Lancaster,Pitman,13,0,0.03,0.006,7
+Lancaster,Lavallette,3,0,0.03,0.014,2
+Lancaster,Phillipsburg,8,0,0.03,0.006,5
+Schuylkill,Silverdale,3,0,0.03,0.014,3
+Lancaster,Woodland,4,0,0.03,0.016,3
+Mercer,Mullica,4,0,0.02,0.01,4
+Indiana,Madison,2,0,0.02,0.024,1
+Mercer,Garfield,6,0,0.02,0.008,5
+Lycoming,Ramsey,9,0,0.02,0.006,5
+Mercer,Oradell,10,0,0.02,0.006,7
+Mercer,Egg Harbor City,3,0,0.02,0.012,3
+Blair,Riverside,5,0,0.02,0.01,4
+Indiana,Hanover,1,0,0.02,0.022,1
+Luzerne,Pemberton,7,0,0.02,0.008,5
+Fulton,Little Egg Harbor,5,0,0.02,0.016,3
+Venango,Northvale,11,0,0.02,0.008,7
+Berks,Edgewater Park,1,0,0.02,0.02,1
+Indiana,Voorhees,2,0,0.02,0.02,1
+Mifflin,Green Brook,6,0,0.02,0.006,5
+Lycoming,Cheltenham,5,0,0.02,0.006,5
+Mercer,Delanco,3,0,0.02,0.014,2
+Blair,Buena,3,0,0.01,0.01,2
+Lancaster,Rockledge,4,0,0.01,0.008,3
+Blair,Mantoloking,5,0,0.01,0.006,5
+Lancaster,Hampton,5,0,0.01,0.008,4
+Venango,Keyport,5,0,0.01,0.006,3
+Susquehanna,Hackettstown,7,0,0.01,0.008,3
+Mifflin,Saddle Brook,6,0,0.01,0.004,5
+Lancaster,Carneys Point,4,0,0.01,0.008,3
+Cumberland,Florham Park,3,0,0.01,0.01,2
+Susquehanna,Vernon,1,0,0.01,0.012,1
+Berks,Patton,2,0,0.01,0.008,2
+Luzerne,Dennis,4,0,0.01,0.01,2
+Blair,Mount Laurel,1,0,0.01,0.012,1
+Berks,Brooklawn,5,0,0.01,0.004,4
+Mercer,Hi-Nella,1,0,0.01,0.012,1
+Mercer,Walker,3,0,0.01,0.01,2
+Lycoming,Midland Park,3,0,0.01,0.008,3
+Lancaster,Rocky Hill,5,0,0.01,0.01,1
+Schuylkill,Mahwah,2,0,0.01,0.006,2
+Cumberland,Ridgefield,7,0,0.01,0.004,4
+Mifflin,Gloucester,4,0,0.01,0.006,2
+Venango,Hardwick,1,0,0.01,0.01,1
+Fulton,Spotswood,1,0,0.01,0.01,1
+Berks,Pohatcong,1,0,0.01,0.01,1
+Lycoming,Hasbrouck Heights,1,0,0.01,0.01,1
+Berks,Ocean Gate,4,0,0.01,0.006,2
+Blair,Asbury Park,1,0,0.01,0.008,1
+Mifflin,Wantage,1,0,0.01,0.006,1
+Susquehanna,Gibbsboro,1,0,0.01,0.006,1
+Allegheny,Warminster,1,0,0.01,0.006,1
+Blair,Winslow,1,0,0.01,0.006,1
+Cumberland,Teterboro,4,0,0.01,0.004,2
+Mifflin,Garwood,2,0,0.0,0.002,2
+Lancaster,Hope,2,0,0.0,0.004,1
+Luzerne,Oakland,1,0,0.0,0.004,1
+Mifflin,Clementon,1,0,0.0,0.004,1
+Luzerne,Tinton Falls,5,0,0.0,0.002,2
+Blair,Beverly,1,0,0.0,0.004,1
+Berks,Southampton,2,0,0.0,0.004,1
+Lycoming,Little Silver,2,0,0.0,0.002,1
+Fulton,Rochelle Park,2,0,0.0,0.002,1
+Berks,Allenhurst,2,0,0.0,0.002,1
+Schuylkill,Frankford,1,0,0.0,0.002,1
+Fulton,Boggs,2,0,0.0,0.002,1
+Mercer,Newton,1,0,0.0,0.002,1
+Blair,Bloomsbury,6,0,0.0,0.002,1
+Lancaster,Glen Ridge,1,0,0.0,0.0,0
+Lycoming,Holmdel,1,0,0.0,0.0,0

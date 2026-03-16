@@ -1,0 +1,15 @@
+county,n_cases,n_farms,n_active_farms,attack_rate_pct,n_chicken_cases,n_duck_cases
+Allegheny,5,820,527,0.61,4,1
+Berks,44,1151,682,3.82,35,9
+Blair,0,634,437,0.0,0,0
+Cumberland,2,854,532,0.23,2,0
+Fulton,0,1121,759,0.0,0,0
+Indiana,20,515,312,3.88,13,7
+Lancaster,3,654,420,0.46,3,0
+Luzerne,4,663,440,0.6,2,2
+Lycoming,3,469,276,0.64,3,0
+Mercer,0,411,280,0.0,0,0
+Mifflin,0,500,321,0.0,0,0
+Schuylkill,0,413,271,0.0,0,0
+Susquehanna,22,572,349,3.85,19,3
+Venango,0,383,243,0.0,0,0
