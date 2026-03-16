@@ -88,7 +88,7 @@ Infection probability: P(infected) = 1 − exp(−λ_j(t))
 |---|---|---|
 | National standstill | N | Not modelled |
 | Suspicion management | N | Detection delays are fixed parameters |
-| Reactive culling | Y | Confirmed farms culled after observed C→R delay (from data). Predicted cases: 3-day buffer after confirmation. Culling removes farm from infectious pool. |
+| Reactive culling | Y | Confirmed farms culled after observed C→R delay (from data). Predicted cases: 3-day buffer after confirmation. Culling removes the farm from the infectious pool. |
 | Contact tracing | N | Not modelled |
 | Zoning: Movement bans in regulated zones | Y | 10 km surveillance zones around confirmed farms for 28 days. Movements from/to zone farms are blocked. |
 | Zoning: Enhanced biosecurity in regulated zones | Y | Farms inside zones have hazard multiplied by (1 − ε) = 0.5 |
