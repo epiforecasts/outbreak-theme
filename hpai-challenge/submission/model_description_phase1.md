@@ -90,7 +90,7 @@ Infection probability: P(infected) = 1 − exp(−λ_j(t))
 | Suspicion management | N | Detection delays are fixed parameters |
 | Reactive culling | Y | Confirmed farms culled after observed C→R delay (from data). Predicted cases: 3-day buffer after confirmation. Culling removes the farm from the infectious pool. |
 | Contact tracing | N | Not modelled |
-| Zoning: Movement bans in regulated zones | Y | 10 km surveillance zones around confirmed farms for 28 days. Movements from/to zone farms are blocked. |
+| Zoning: Movement bans in regulated zones | Y | 10 km surveillance zones around confirmed farms for 28 days. Movements from farms inside regulated zones are blocked. |
 | Zoning: Enhanced biosecurity in regulated zones | Y | Farms inside zones have hazard multiplied by (1 − ε) = 0.5 |
 | Preventive culling | Y | From 1 Jan 2026: active susceptible farms within 1 km of confirmed cases are removed |
 | Pre-movement testing in the HRZ | Y | Infectious source farms in HRZ detected with sensitivity σ_test = 0.9, blocking the movement |
