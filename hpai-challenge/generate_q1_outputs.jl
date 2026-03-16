@@ -26,7 +26,7 @@ activity = CSV.read(
 merged = leftjoin(cases, population; on=:farm_id)
 
 # Identify active farms: those with at least one record where date_end is missing
-active_farms = unique(activity[ismissing.(activity.date_end), :farm_id])
+active_farms = Set(activity[ismissing.(activity.date_end), :farm_id])
 
 # ── 1. table_cases_by_type.csv ─────────────────────────────────────────────────
 # Distribution by species and production type
@@ -39,13 +39,15 @@ table_rows = DataFrame(
     attack_rate_pct=Float64[], attack_rate_active_pct=Float64[]
 )
 
+case_farm_ids = Set(merged.farm_id)
+
 for g in groupby(population, [:species, :production])
     sp = first(g.species)
     pr = first(g.production)
     n_farms_total = nrow(g)
     farm_ids = g.farm_id
     n_active = count(fid -> fid in active_farms, farm_ids)
-    n_cases_here = count(fid -> fid in Set(merged.farm_id), farm_ids)
+    n_cases_here = count(fid -> fid in case_farm_ids, farm_ids)
 
     ar_pct = round(100.0 * n_cases_here / n_farms_total; digits=2)
     ar_active_pct = n_active > 0 ? round(100.0 * n_cases_here / n_active; digits=2) : 0.0

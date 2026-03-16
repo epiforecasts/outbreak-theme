@@ -239,7 +239,7 @@ See `q4_spillover_temporal_summary.csv` and `q4_transmission_temporal_summary.cs
 
 We evaluated replacing preventive culling with faster reactive culling (reducing the confirmation-to-removal delay by 1 day, from 3 to 2 days) under two transmission assumptions:
 
-**Spillover-only scenario**: Cumulative new cases: median 44 [21–81], essentially identical to the baseline (45 [22–79]). Under spillover-dominated dynamics, neither preventive culling nor reactive culling timing substantially affects the epidemic because each new case arises independently from wild-bird pressure, not from farm-to-farm transmission.
+**Spillover-only scenario**: Cumulative new cases: median 44 [21–81], essentially identical to the baseline (45 [22–79]). Under spillover-dominated dynamics, neither preventive culling nor reactive culling timing substantially affects the epidemic because each new case arises independently of wild-bird pressure, not from farm-to-farm transmission.
 
 **Spillover + transmission scenario**: Cumulative new cases: median 105 [55–170]. This is comparable to the chicken-only preventive culling scenario (103 [54–178]), suggesting that the benefit of removing the most infectious day (when w(τ) is highest, just before culling) is approximately offset by the loss of preventive culling's protection of nearby susceptible farms.
 
