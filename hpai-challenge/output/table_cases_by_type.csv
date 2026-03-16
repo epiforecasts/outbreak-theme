@@ -1,0 +1,6 @@
+species,production,n_cases,n_farms,n_active_farms,attack_rate_pct,attack_rate_active_pct
+chicken,broiler_1,18,1248,517,1.44,3.48
+chicken,broiler_2,56,2746,1411,2.04,3.97
+chicken,layer,7,441,415,1.59,1.69
+duck,conventional,11,3691,2684,0.3,0.41
+duck,organic,11,1034,822,1.06,1.34
