@@ -72,7 +72,7 @@ where:
 Infection probability: P(infected) = 1 − exp(−λ_j(t))
 
 **Progression and recovery**: Fixed timeline per case:
-- Latent period (μ_E = 3.5 days): infection → infectious
+- Back-calculation proxy (μ_E = 3.5 days): used to infer infection timing from observed suspicion dates; transmission potential in the simulation follows w(τ) with τ_min = 1 day
 - Detection delay (μ_ID = 5.0 days): infectious → suspicion raised
 - D→C delay (2 days): suspicion → confirmation
 - C→R delay: from data per case (median 3 days)
