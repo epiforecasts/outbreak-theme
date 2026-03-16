@@ -271,7 +271,7 @@ See `q5_spillover_temporal_summary.csv` and `q5_transmission_temporal_summary.cs
 
 ## Effort estimate
 
-Approximately 8–10 person-days over the challenge period, including model development, data processing, inference, prediction, and scenario analysis.
+The project spanned approximately 4 weeks (early February – early March 2026). The workflow — including model design, code implementation, data processing, inference, validation, prediction, and scenario analysis — was predominantly LLM-generated (Claude Code) following a structured 11-step modelling workflow, with human review and direction at each stage. Direct human effort was concentrated on strategic decisions, reviewing outputs, and iterating on model structure.
 
 ---
 
