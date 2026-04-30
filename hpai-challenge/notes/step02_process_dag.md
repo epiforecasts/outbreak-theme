@@ -432,3 +432,96 @@ If the simplified model is insufficient:
 
 ---
 
+## Phase 2 iteration
+
+Several structural changes to the process DAG.
+
+### Confinement
+
+From 14 Jan 2026, broiler\_2 and organic duck farms are confined. We multiply susceptibility by a confinement factor $\gamma = 0.5$ for confined farms when $t \geq t_{\text{confine}}$. This enters the force of infection as:
+
+$$\lambda_j(t) = \gamma_j(t) \times \beta_{\text{species}}[j] \times (\text{hazard}_{\text{spillover}} + \text{hazard}_{\text{local}} + \text{hazard}_{\text{movement}})$$
+
+where $\gamma_j(t) = \gamma$ if farm $j$ is confined and $t \geq t_{\text{confine}}$, and $\gamma_j(t) = 1$ otherwise.
+
+### Phased preventive culling
+
+The preventive culling policy changed mid-outbreak:
+- Phase 1 (1–13 Jan): 1 km radius, all species
+- Phase 2 (14 Jan onwards): 3 km radius, chicken farms only
+
+### Restocking
+
+Depopulated farms can restock after a 14-day delay. Restocked farms re-enter the susceptible pool. This is relevant for Q5 (prohibit restocking scenario).
+
+### Spillover profile
+
+The piecewise constant spillover profile is replaced by a Bateman function:
+
+$$\psi(t) = \frac{(1 - \exp(-\sigma \cdot \tau)) \cdot \exp(-\delta \cdot \tau)}{\psi_{\text{peak}}}$$
+
+where $\tau = t - t_0$ is time since onset, $\sigma$ is the rise rate, $\delta$ is the decay rate, and $\psi_{\text{peak}}$ normalises the peak to 1. This has 3 shape parameters ($t_0$, $\sigma$, $\delta$) — the same count as the phase 1 parameterisation ($t_{\text{change}}$, $\rho$, $\phi$) — but gives a smoother profile with an explicit rise phase, better matching the expected pattern of wild bird arrival followed by departure.
+
+### Spatial kernel
+
+The Cauchy kernel is replaced by an exponential kernel: $K(d) = \exp(-d/\alpha)$. The exponential is simpler, has fewer parameters, and gives adequate fit with 466 cases. Movement transmission already accounts for long-range jumps, so the heavy tail of the Cauchy kernel is less needed.
+
+### Movement transmission
+
+$p_{\text{mov}}$ is now estimated rather than fixed at 0.01. With 466 cases and island-wide spread, the data provide enough information to separate movement from spatial transmission, at least partially.
+
+### Updated DAG text representation
+
+```text
+Parameters (estimated):
+  t₀       = spillover onset day
+  φ_hrz    = HRZ spillover rate (at onset)
+  φ_non    = non-HRZ spillover rate (at onset)
+  σ        = spillover rise rate (Bateman function)
+  δ        = spillover decay rate (Bateman function)
+  β        = spatial transmission rate
+  α        = spatial kernel scale (metres)
+  β_duck   = relative duck susceptibility
+  p_mov    = per-movement transmission probability
+
+Parameters (fixed):
+  τ_min    = hard latent period (= 1 day)
+  r        = within-farm growth rate (= 1.0/day)
+  σ_test   = pre-shipment testing sensitivity (= 0.9)
+  γ        = confinement factor (= 0.5)
+
+Process:
+  For each susceptible farm j at time t:
+
+    # Spillover (Bateman function)
+    τ = t - t₀
+    ψ(t) = 0 if t < t₀, else [(1-exp(-σ·τ))·exp(-δ·τ)] / ψ_peak
+
+    hazard_spillover = φ_j × ψ(t)
+
+    # Local transmission (exponential kernel)
+    hazard_local = β × Σ_{i: I_i(t)=1} w(t - T_i^I) × exp(-d_ij / α)
+
+    # Movement transmission (p_mov estimated)
+    hazard_movement = Σ_{i: I_i(t)=1} M_i→j(t) × p_eff(i,t) × w(t - T_i^I)
+
+    # Total hazard with confinement and species modifiers
+    λ_j(t) = γ_j(t) × β_species[j] × (hazard_spillover + hazard_local + hazard_movement)
+
+    P(infection on day t) = 1 - exp(-λ_j(t))
+```
+
+## Phase 3 iteration
+
+One structural change to the process DAG: the organic duck confinement policy was lifted on 14 February 2026 (day 76 from 1 Dec 2025).
+
+### Species-specific confinement with end date
+
+In phase 2, confinement applied uniformly to broiler\_2 and organic duck farms from $t_{\text{confine}} = $ 14 Jan onwards, with no end date. Phase 3 introduces a species-specific end date for organic ducks:
+
+$$\gamma_j(t) = \begin{cases} \gamma & \text{if farm } j \text{ is broiler\_2 and } t \geq t_{\text{confine}} \\ \gamma & \text{if farm } j \text{ is organic duck and } t_{\text{confine}} \leq t < t_{\text{lift}} \\ 1 & \text{otherwise} \end{cases}$$
+
+where $t_{\text{lift}} = $ 14 Feb 2026 is the date organic duck confinement was lifted. Broiler\_2 confinement continues with no end date in the data.
+
+No other new processes. The spillover, local transmission, movement, and culling components are unchanged from phase 2.
+

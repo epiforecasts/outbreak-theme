@@ -258,3 +258,83 @@ From `step00_data_source_characterisation.md`:
 
 ---
 
+## Phase 2 iteration
+
+Phase 2 redefines some questions and adds new ones. The prediction horizon shifts from 14 Jan to 14 Feb 2026 (4-week forward window from the new data cut-off).
+
+### Q1: Epidemic description (unchanged)
+
+Same as phase 1. Updated tables and maps cover the full 466-case dataset.
+
+### Q2: Baseline prediction (updated horizon)
+
+4-week prediction from 14 Feb 2026, assuming current management continues. Same estimand as phase 1, shifted forward.
+
+### Q3: Trade-off — preventive culling vs reactive culling speed (new)
+
+Drop preventive culling of chicken farms entirely, but reduce reactive culling delay by 1 day. This replaces the phase 1 Q3 (species contribution), which is now addressed through the species susceptibility parameter $\beta_{\text{duck}}$ in the model.
+
+### Q4: Stop confinement (new)
+
+Two sub-scenarios:
+- (a) Stop confinement for organic duck farms only
+- (b) Stop confinement for all confined farms (broiler\_2 and organic duck)
+
+This tests how much the confinement policy (in effect from 14 Jan) contributes to epidemic control.
+
+### Q5: Prohibit restocking in surveillance zones (new)
+
+Depopulated farms in surveillance zones are not allowed to restock. This tests whether restocking contributes meaningfully to onward transmission.
+
+### Summary of changes
+
+| Question | Phase 1 | Phase 2 |
+|----------|---------|---------|
+| Q1 | Descriptive | Descriptive (unchanged) |
+| Q2 | 4-week prediction from 14 Jan | 4-week prediction from 14 Feb |
+| Q3 | Species contribution | Trade-off: drop preventive culling vs faster reactive |
+| Q4 | Chicken-only preventive culling | Stop confinement (a: organic ducks, b: all) |
+| Q5 | Faster reactive vs preventive | Prohibit restocking in surveillance zones |
+
+---
+
+## Phase 3 iteration
+
+Unlike phases 1 and 2, which posed forecasting questions, phase 3 questions are retrospective and counterfactual. The epidemic is resolved (560 total cases, last case 7 April 2026), so there is no prediction horizon to shift.
+
+### Q1: Full epidemic description
+
+Same structure as phases 1–2. Updated tables, timeline, and spatial map now cover the complete 560-case dataset from first detection (22 Dec 2025) to last case (7 Apr 2026).
+
+### Q2: Safe restocking window
+
+When can depopulated farms restock without risking a rebound? The estimand is the earliest date $t^*$ at which restocking can resume across the island (or by zone/production type) such that the probability of a new outbreak remains below an acceptable threshold.
+
+This requires forward simulation from the epidemic end state under restocking scenarios, with uncertainty from the fitted model parameters.
+
+### Q3 (bonus): Total outbreaks averted by preventive culling
+
+How many outbreaks did the preventive culling programme avert in total over the full epidemic? The estimand is the difference in cumulative cases between the observed trajectory and a counterfactual in which preventive culling was never implemented:
+
+$$\Delta C_{\text{total}} = C_{\text{no-prev-cull}} - C_{\text{observed}}$$
+
+This is a retrospective counterfactual, not a forecast. With the full epidemic observed and all cull dates now complete, the uncertainty comes from model parameters rather than future case counts.
+
+### Q4 (bonus): Culling capacity for 95% eradication by end of phase 2
+
+What daily culling capacity would have been needed at the end of phase 1 (13 Jan 2026) to achieve 95% probability of eradication by the end of phase 2 (13 Feb 2026)? The estimand is the minimum capacity $\kappa^*$ such that:
+
+$$P(\text{no cases after 13 Feb} \mid \kappa = \kappa^*, \text{data to 13 Jan}) \geq 0.95$$
+
+This requires re-running the forward simulation under phase 1 parameters with varying $\kappa$.
+
+### Summary of changes
+
+| Question | Phase 2 | Phase 3 |
+|----------|---------|---------|
+| Q1 | Descriptive (466 cases) | Descriptive (560 cases, resolved) |
+| Q2 | 4-week forecast from 14 Feb | Restocking safety window |
+| Q3 | Drop preventive culling vs faster reactive | (bonus) Total outbreaks averted by preventive culling |
+| Q4 | Stop confinement (organic ducks / all) | (bonus) Culling capacity for 95% eradication by end of phase 2 |
+| Q5 | Prohibit restocking in surveillance zones | — |
+

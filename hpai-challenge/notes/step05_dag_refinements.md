@@ -121,6 +121,40 @@ Both candidates proceed through the remaining workflow steps (modularisation, in
 
 ---
 
+## Phase 2 iteration
+
+### Full model now identifiable
+
+The full model (9 estimated parameters) is the primary model. In phase 1, spatial transmission rate $\beta$ was unidentifiable ($h_0 \approx 0$) because 103 cases over 24 days on a localised part of the island did not provide enough spatial contrast. With 466 cases and island-wide spread, the spatial ($\beta \approx 0.011$, $\alpha \approx 5.1$ km) and movement ($p_{\text{mov}} \approx 0.08$) parameters are well-identified. The spillover-only model is retained for comparison only.
+
+### Bateman spillover profile
+
+The piecewise constant profile is replaced by a Bateman function with 3 parameters ($t_0$, $\sigma$, $\delta$) — the same count as the phase 1 form ($t_{\text{change}}$, $\rho$, $\phi$). The Bateman function has an explicit rise phase followed by exponential decay, giving a smoother and more realistic spillover profile than the step function.
+
+### Species parameterisation
+
+$\beta_{\text{duck}} \sim \text{Beta}(2, 8)$ serves as a susceptibility modifier (range 0 to 1), with chicken = 1 as reference. Posterior median is ~0.17, meaning duck farms are about 6 times less susceptible per unit of force. This conflates true susceptibility with detectability, as before.
+
+### Confinement factor
+
+$\gamma = 0.5$ is fixed, not estimated. With the available data, it is difficult to separate confinement effects from the spatial transmission rate — both reduce infections in the same farm types over the same time period. Sensitivity analysis over $\gamma \in \{0.3, 0.5, 0.7\}$ is conducted instead.
+
+## Phase 3 iteration
+
+### Time-limited organic duck confinement
+
+The key refinement for phase 3 is that organic duck confinement has an end date. The mandatory confinement order for organic ducks was lifted on day 76 (14 February 2026). The confinement factor $\gamma$ therefore applies only to organic duck farms during days 15–75. Broiler farms in the broiler_2 category remain under confinement throughout (no end date specified).
+
+The confinement rule is now:
+
+$$\gamma_j(t) = \begin{cases} \gamma & \text{if } j \text{ is organic duck and } 15 \leq t \leq 75 \\ \gamma & \text{if } j \text{ is broiler\_2 and } t \geq 15 \\ 1 & \text{otherwise} \end{cases}$$
+
+This change matters for the long epidemic tail (days 76–120): organic duck farms return to full susceptibility after day 76, which may explain continued cases in that species group during March–April.
+
+### Bulk bin structure
+
+The 16-bin bulk survival structure (HRZ $\times$ species $\times$ activity $\times$ confined) now has a time-varying confined dimension for organic duck farms. Bins for organic duck farms split at day 76: confined before, unconfined after. The total number of distinct bin configurations is unchanged at 16, but bin membership for organic duck farms changes at that day boundary.
+
 ## Consolidated Parameter Table
 
 ### Estimated parameters (7)

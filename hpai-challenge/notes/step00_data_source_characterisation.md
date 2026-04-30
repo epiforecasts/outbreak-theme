@@ -568,6 +568,33 @@ This provides representation of both species but limited production type coverag
 
 ---
 
+## Phase 2 iteration
+
+Phase 2 data were released with a later cut-off (13 Feb 2026 vs 13 Jan 2026). No structural changes to CSV schemas. The key differences are in volume and coverage.
+
+### Updated data volumes
+
+| Data source | Phase 1 | Phase 2 | Notes |
+|-------------|---------|---------|-------|
+| `cases.csv` | 103 cases | 466 cases | New detection method `post-culling` (61 cases) — farms found positive during preventive culling |
+| `prev_culls.csv` | 52 culls | 539 culls | Now heavily chicken-focused (506/539) |
+| `activity.csv` | 23,969 records | 27,506 records | Extended to 13 Feb |
+| `movement.csv` | 7,187 records | 7,959 records | Extended to 13 Feb |
+
+### Post-culling detection
+
+The new `post-culling` detection method (61/466 cases) represents farms found positive during preventive culling operations. For these farms, `cull_start` precedes `date_confirmed`. The back-calculation still works: $T_j^I = T_j^C - 11$ gives an infection date before the cull start.
+
+### Preventive culling coverage
+
+The jump from 52 to 539 preventive culls reflects both the expanded observation window and the phase 2 policy shift to chicken-only culling within 3 km (from all-species within 1 km). Missing cull date rates improved — most phase 2 records have timing data.
+
+### Cases with incomplete culls
+
+14 cases have `cull_status` of "planned" or "in progress" at the data cut-off. These have `cull_start` but no `cull_end`. We only use `cull_start` for removal timing, so this does not affect the model.
+
+---
+
 ## Key Data Gaps and Modelling Implications
 
 ### Gap 1: Infection times are latent
@@ -603,6 +630,29 @@ This provides representation of both species but limited production type coverag
 **What's missing**: Non-broiler movements, equipment/personnel contacts
 **Why it matters**: Movement transmission may occur via unrecorded pathways
 **Implication**: Movement transmission effect may be underestimated or confounded with proximity
+
+---
+
+## Phase 3 iteration
+
+Phase 3 data cover the full resolved epidemic (last case 7 April 2026). No structural changes to CSV schemas.
+
+### Updated data volumes
+
+| Data source | Phase 2 | Phase 3 | Notes |
+|-------------|---------|---------|-------|
+| `cases.csv` | 466 cases | 560 cases (+94) | Last case 7 Apr. No new detection methods |
+| `prev_culls.csv` | 539 (21 incomplete) | 691 (all completed) | +152 culls, all finished |
+| `activity.csv` | 27,506 records | 33,420 records | Extended to mid-April |
+| `movement.csv` | 7,959 records | 9,341 records | Extended to 11 Apr |
+
+### Preventive cull completion
+
+All 691 preventive culls now have recorded completion dates. The right-censoring gap identified in phase 1 (77% missing cull dates) and residual incompleteness from phase 2 are fully resolved. The imputation approach used in earlier phases is no longer needed for retrospective analysis.
+
+### No schema changes
+
+All six data sources retain their phase 1/2 structure. The quality issues identified for earlier phases (species detection bias, movement data partial coverage, n=3 mortality ledgers) remain unchanged — additional data were not collected to address them.
 
 ---
 

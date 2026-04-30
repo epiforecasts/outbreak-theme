@@ -196,3 +196,36 @@ At each stage, four validation checks before proceeding:
 | Q5 (counterfactual: modified delays) | A + B + C (modify $\delta_{\text{reactive}}$) |
 
 ---
+
+## Phase 2 iteration
+
+### Module 1: Spillover-only (6 parameters)
+
+Fitted for comparison. Expected to produce poor posterior predictive checks given that spatial transmission is now identifiable.
+
+### Module 2: Full model (9 parameters)
+
+Primary model — spillover + spatial + movement. Nine estimated parameters: $t_0$, $\phi_{\text{hrz}}$, $\phi_{\text{non}}$, $\sigma$, $\delta$, $\beta$, $\alpha$, $\beta_{\text{duck}}$, $p_{\text{mov}}$.
+
+### Model comparison
+
+WAIC for the full model is ~5360 vs ~6340 for the spillover-only model (difference ~980). The full model is strongly preferred.
+
+## Phase 3 iteration
+
+### Modular structure unchanged
+
+The three-module structure (A: spillover, B: transmission, C: observation) carries forward without modification. The full model (9 estimated parameters) is fitted to the complete 560-case dataset.
+
+### Constraining spillover decay
+
+The long epidemic tail — 1–3 cases per day through March and April — provides substantially more information about the spillover decay rate $\delta$ than the truncated phase-2 data. In phase 2, $\delta$ was likely underestimated (slow decay → elevated late-outbreak spillover), which contributed to the overprediction of 382 cases against an actual 81 in Q2. With the full time series, the tail should pull $\delta$ towards a faster decay, reducing residual spillover hazard in the forecast period.
+
+### New simulation capabilities
+
+Phase 3 predictions require two capabilities not needed previously:
+
+- **Q3 (counterfactual without preventive culling)**: simulate forward with the preventive-culling removal rule disabled. Farms within 1 km of a confirmed case are not pre-emptively culled; only reactive culling applies.
+- **Q4 (capacity-constrained culling)**: simulate forward with a daily culling capacity cap. When the number of farms requiring culling on a given day exceeds capacity, excess farms are queued and culled on subsequent days in order of confirmation date.
+
+Both modifications apply only to the removal component (step 06, §Shared components) and leave the force-of-infection calculation unchanged.

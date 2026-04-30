@@ -279,3 +279,25 @@ The observation DAG determines:
 | Q5 | Observation model unchanged; process model modified |
 
 ---
+
+## Phase 2 iteration
+
+### Right-censoring correction
+
+Infections in the last COMPOUND\_DELAY (11) days of the observation window cannot be confirmed by the data cut-off. Without correction, the likelihood would penalise parameters that produce infections in this window, biasing estimates downward.
+
+We truncate the survival likelihood at $T_{\text{LIK}} = T_{\text{SIM\_END}} - \text{COMPOUND\_DELAY} = 75 - 11 = 64$. Non-case farms contribute survival only up to day 64. Cases confirmed after this point are excluded from the likelihood.
+
+### Forward simulation start
+
+Forward simulation for predictions starts from $T_{\text{LIK}}$ (day 64) rather than $T_{\text{SIM\_END}}$ (day 75). At day 64, there are ~73 infectious farms; at day 75, only ~9 remain (most have been culled). Starting from day 64 lets the model generate the unobserved recent infections that fall within the censored gap, producing more realistic forward trajectories.
+
+## Phase 3 iteration
+
+### Right-censoring is vacuous
+
+The full epidemic is now observed. The last infection day is approximately day 117 (mid-April 2026), and $T_{\text{LIK}} = 120$. No cases fall within the censored gap, so the right-censoring correction applied in phase 2 has no practical effect. All 560 confirmed cases contribute to the likelihood; no cases are excluded. Forward simulation for predictions begins from day 120 rather than an earlier truncation point.
+
+### Observation model unchanged
+
+The observation model structure is unchanged from phase 2. Back-calculation of infection times uses the same compound delay ($d = 10.5$ days), and the likelihood contributions for cases and non-cases are identical. No modification to Module C is required.

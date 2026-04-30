@@ -260,3 +260,35 @@ Refit with $\varepsilon \in \{0.3, 0.5, 0.7\}$ (step 05, §Fixed parameters). Th
 | Sensitivity | Delays (20-point grid), priors (2× width), kernels (exp vs Cauchy), detection stationarity, zone effectiveness | Covers all major fixed assumptions |
 
 ---
+
+## Phase 2 iteration
+
+### Right-censoring in the likelihood
+
+The likelihood is truncated at $T_{\text{LIK}} = 64$ to correct for right-censoring. Infections in the last 11 days of the observation window cannot be confirmed by the data cut-off. Without truncation, the survival likelihood would favour parameters that suppress late infections.
+
+### Bulk survival bins
+
+Expanded from 8 to 16 bins by adding a confined/not-confined dimension. The bins are now: HRZ status (2) $\times$ species (2) $\times$ activity (2) $\times$ confined (2) = 16.
+
+### Computation
+
+Full model: 4 chains $\times$ 1000 samples, approximately 20 hours on HPC (4 cores, 32 GB). All $\hat{R} < 1.01$, all ESS $> 500$.
+
+### Synthetic data recovery
+
+9 out of 9 parameters covered by 95% CrI in synthetic data recovery tests.
+
+## Phase 3 iteration
+
+### Larger likelihood window
+
+$T_{\text{LIK}}$ increases from 64 to 120 days with 560 cases (up from 103 in phase 1 and ~466 in phase 2). The likelihood evaluation cost scales approximately with the number of cases and the observation window; expect roughly a 3× increase in wall-clock time per iteration relative to phase 2.
+
+### Warm-starting from phase-2 MAP
+
+Chains are initialised at the phase-2 MAP parameter values rather than via a new grid or random search. This reduces warmup iterations required to reach the typical set. Small perturbations (±10% on the log scale for positive parameters) are applied across the 4 chains to ensure independent exploration.
+
+### NUTS settings unchanged
+
+The sampling configuration is unchanged: 4 chains, 500 warmup iterations, 1000 post-warmup samples (4000 total draws). ForwardDiff forward-mode AD with chunk size equal to the number of estimated parameters. Target acceptance rate 0.8, max tree depth 10. Convergence criteria remain $\hat{R} < 1.01$ and bulk/tail ESS $> 400$ per parameter.

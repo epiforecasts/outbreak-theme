@@ -226,3 +226,31 @@ Before model fitting:
 *Note*: Q2–Q5 additionally require all fixed inputs (mortality ledgers for r, movement.csv for p_mov, σ_test); these are omitted from rows for brevity.
 
 ---
+
+## Phase 2 iteration
+
+### Post-culling detection
+
+The new `post-culling` detection method (61/466 cases) covers farms found positive during preventive culling. For these farms, `cull_start` precedes `date_confirmed`. The back-calculation $T_j^I = T_j^C - 11$ still gives infection dates before cull start, so no special handling is needed.
+
+### Cases with incomplete culls
+
+14 cases have `cull_status` of "planned" or "in progress" at the data cut-off. These have `cull_start` but no `cull_end`. We only use `cull_start` for determining when a farm stops being infectious, so incomplete culls do not affect the model.
+
+---
+
+## Phase 3 iteration
+
+All data sources remain the same. No new sources are introduced and no existing sources are dropped.
+
+### Right-censoring is vacuous
+
+The epidemic is fully observed: 560 cases, last case 7 April 2026, all 691 preventive culls completed. There is no right-censoring of the case or cull records to account for.
+
+### Likelihood window
+
+Despite the epidemic being resolved, we retain the convention $T_{\text{LIK}} = T_{\text{SIM\_END}} - \text{COMPOUND\_DELAY}$ for structural consistency with the observation model. This avoids a special-case code path for the terminal phase and has negligible effect on inference: the compound delay is short relative to the full epidemic duration, and no new cases occur in the final weeks.
+
+### Confinement lifting in activity data
+
+The lifting of organic duck confinement on 14 Feb is encoded in the process DAG (step02) rather than as a data source change. The activity records in `activity.csv` continue to define which farms have birds present; the confinement modifier $\gamma_j(t)$ reverts to 1 for organic duck farms after 14 Feb without any change to the data pipeline.
