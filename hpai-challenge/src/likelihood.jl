@@ -18,6 +18,17 @@ function safe_log1mexp(x)
     end
 end
 
+"""
+    is_confined_at(is_confined, is_organic_duck, t) -> Bool
+
+Check whether a farm is confined at time t. Organic duck confinement was
+lifted on CONFINEMENT_END_DAY_ORGANIC_DUCK; broiler_2 confinement continues.
+"""
+@inline function is_confined_at(is_confined::Bool, is_organic_duck::Bool, t::Int)
+    is_confined && t >= CONFINEMENT_START_DAY &&
+        !(is_organic_duck && t >= CONFINEMENT_END_DAY_ORGANIC_DUCK)
+end
+
 # ── 6. Spillover-only likelihood (Module A + C) ─────────────────────────────
 
 """
@@ -48,23 +59,29 @@ function foi_loglik_spillover(
 
     zone_mult = RT(1.0 - EPSILON)
 
-    # ── Bulk non-case survival ──
-    @inbounds for t in 1:T
+    conf_mult = RT(CONFINEMENT_FACTOR)
+
+    # ── Bulk non-case survival (truncated at T_LIK for right-censoring) ──
+    @inbounds for t in 1:T_LIK
         ψt = ψ[t]
         ψt == zero(RT) && continue
-        for bin in 1:8
+        for bin in 1:16
             cnt = data.bulk_counts[bin, t]
             cnt == 0 && continue
 
             is_duck_b = ((bin - 1) & 1) != 0
             is_hrz_b = ((bin - 1) & 2) != 0
             in_zone_b = ((bin - 1) & 4) != 0
+            is_confined_b = ((bin - 1) & 8) != 0
 
             sp = is_duck_b ? β_duck : one(RT)
             φ = is_hrz_b ? φ_hrz : φ_non
             λ = sp * φ * ψt
             if in_zone_b
                 λ *= zone_mult
+            end
+            if is_confined_b && t >= CONFINEMENT_START_DAY
+                λ *= conf_mult
             end
             ll -= λ * cnt
         end
@@ -76,6 +93,8 @@ function foi_loglik_spillover(
         ti = data.case_infect_day[c]
         sp = data.is_duck[ci] ? β_duck : one(RT)
         φ = data.is_hrz[ci] ? φ_hrz : φ_non
+        ci_confined = data.is_confined[ci]
+        ci_organic_duck = data.is_organic_duck[ci]
 
         # Survival before infection day
         for t in 1:(ti - 1)
@@ -86,6 +105,9 @@ function foi_loglik_spillover(
             if in_zone[ci, t]
                 λ *= zone_mult
             end
+            if is_confined_at(ci_confined, ci_organic_duck, t)
+                λ *= conf_mult
+            end
             ll -= λ
         end
 
@@ -95,18 +117,23 @@ function foi_loglik_spillover(
         if in_zone[ci, ti]
             λ_inf *= zone_mult
         end
+        if is_confined_at(ci_confined, ci_organic_duck, ti)
+            λ_inf *= conf_mult
+        end
         if λ_inf <= zero(RT)
             return RT(-Inf)
         end
         ll += safe_log1mexp(λ_inf)
     end
 
-    # ── Preventive-cull farm survival (days 1 to cull day - 1) ──
+    # ── Preventive-cull farm survival (truncated at T_LIK) ──
     @inbounds for p in 1:data.n_prev_culls
         pi = data.prev_cull_idx[p]
-        cull_t = data.prev_cull_day[p]
+        cull_t = min(data.prev_cull_day[p], T_LIK + 1)
         sp = data.is_duck[pi] ? β_duck : one(RT)
         φ = data.is_hrz[pi] ? φ_hrz : φ_non
+        pi_confined = data.is_confined[pi]
+        pi_organic_duck = data.is_organic_duck[pi]
 
         for t in 1:(cull_t - 1)
             ψt = ψ[t]
@@ -115,6 +142,9 @@ function foi_loglik_spillover(
             λ = sp * φ * ψt
             if in_zone[pi, t]
                 λ *= zone_mult
+            end
+            if is_confined_at(pi_confined, pi_organic_duck, t)
+                λ *= conf_mult
             end
             ll -= λ
         end
@@ -177,16 +207,16 @@ function foi_loglik(
         case_kernel[k] = exp(-data.flat_nbr_dist_val[k] * inv_α)
     end
 
-    # ── Spatial hazard for susceptible non-case farms ──
+    # ── Spatial hazard for susceptible non-case farms (up to T_LIK) ──
     n_susc = length(data.susceptible_with_nbrs)
-    susc_total_hazard = zeros(RT, n_susc, T)
+    susc_total_hazard = zeros(RT, n_susc, T_LIK)
 
     @inbounds for s in 1:n_susc
         si = data.susceptible_with_nbrs[s]
         off_start = data.susc_flat_offset[s]
         off_end = data.susc_flat_offset[s + 1] - 1
 
-        for t in 1:T
+        for t in 1:T_LIK
             data.active[si, t] || continue
             h_spatial = zero(RT)
             for k in off_start:off_end
@@ -213,7 +243,7 @@ function foi_loglik(
 
     mov_hazard = Dict{Tuple{Int,Int}, RT}()  # (farm_idx, day) → hazard
 
-    @inbounds for t in 1:T
+    @inbounds for t in 1:T_LIK
         for (src, dst) in data.mov_by_day[t]
             src_case = get(farm_to_case, src, 0)
             src_case == 0 && continue
@@ -248,38 +278,48 @@ function foi_loglik(
         susc_idx_map[data.susceptible_with_nbrs[s]] = s
     end
 
-    # ── Bulk non-case survival (spillover) ──
-    @inbounds for t in 1:T
+    conf_mult = RT(CONFINEMENT_FACTOR)
+
+    # ── Bulk non-case survival (spillover, truncated at T_LIK) ──
+    @inbounds for t in 1:T_LIK
         ψt = ψ[t]
         ψt == zero(RT) && continue
-        for bin in 1:8
+        for bin in 1:16
             cnt = data.bulk_counts[bin, t]
             cnt == 0 && continue
             is_duck_b = ((bin - 1) & 1) != 0
             is_hrz_b = ((bin - 1) & 2) != 0
             in_zone_b = ((bin - 1) & 4) != 0
+            is_confined_b = ((bin - 1) & 8) != 0
             sp = is_duck_b ? β_duck : one(RT)
             φ = is_hrz_b ? φ_hrz : φ_non
             λ_spill = sp * φ * ψt
             if in_zone_b
                 λ_spill *= zone_mult
             end
+            if is_confined_b && t >= CONFINEMENT_START_DAY
+                λ_spill *= conf_mult
+            end
             ll -= λ_spill * cnt
         end
     end
 
-    # ── Non-case, non-prev-cull spatial + movement survival ──
-    # (prev-cull farms handled separately below with truncated time range)
+    # ── Non-case, non-prev-cull spatial + movement survival (truncated at T_LIK) ──
     @inbounds for s in 1:n_susc
         si = data.susceptible_with_nbrs[s]
         data.prev_cull_set[si] && continue
         sp = data.is_duck[si] ? β_duck : one(RT)
-        for t in 1:T
+        si_confined = data.is_confined[si]
+        si_organic_duck = data.is_organic_duck[si]
+        for t in 1:T_LIK
             h = susc_total_hazard[s, t]
             h == zero(RT) && continue
             λ_trans = sp * h
             if in_zone[si, t]
                 λ_trans *= zone_mult
+            end
+            if is_confined_at(si_confined, si_organic_duck, t)
+                λ_trans *= conf_mult
             end
             ll -= λ_trans
         end
@@ -293,15 +333,20 @@ function foi_loglik(
         if in_zone[dst, t]
             λ_mov *= zone_mult
         end
+        if is_confined_at(data.is_confined[dst], data.is_organic_duck[dst], t)
+            λ_mov *= conf_mult
+        end
         ll -= λ_mov
     end
 
-    # ── Preventive-cull farm survival (spillover + transmission) ──
+    # ── Preventive-cull farm survival (truncated at T_LIK) ──
     @inbounds for p in 1:data.n_prev_culls
         pi = data.prev_cull_idx[p]
-        cull_t = data.prev_cull_day[p]
+        cull_t = min(data.prev_cull_day[p], T_LIK + 1)
         sp = data.is_duck[pi] ? β_duck : one(RT)
         φ = data.is_hrz[pi] ? φ_hrz : φ_non
+        pi_confined = data.is_confined[pi]
+        pi_organic_duck = data.is_organic_duck[pi]
 
         for t in 1:(cull_t - 1)
             data.active[pi, t] || continue
@@ -319,6 +364,9 @@ function foi_loglik(
             if in_zone[pi, t]
                 λ *= zone_mult
             end
+            if is_confined_at(pi_confined, pi_organic_duck, t)
+                λ *= conf_mult
+            end
             ll -= λ
         end
     end
@@ -329,6 +377,8 @@ function foi_loglik(
         ti = data.case_infect_day[c]
         sp = data.is_duck[ci] ? β_duck : one(RT)
         φ = data.is_hrz[ci] ? φ_hrz : φ_non
+        ci_confined = data.is_confined[ci]
+        ci_organic_duck = data.is_organic_duck[ci]
 
         # Survival before infection day
         for t in 1:(ti - 1)
@@ -359,6 +409,9 @@ function foi_loglik(
             λ *= sp
             if in_zone[ci, t]
                 λ *= zone_mult
+            end
+            if is_confined_at(ci_confined, ci_organic_duck, t)
+                λ *= conf_mult
             end
             ll -= λ
         end
@@ -391,6 +444,9 @@ function foi_loglik(
         λ_inf *= sp
         if in_zone[ci, ti]
             λ_inf *= zone_mult
+        end
+        if is_confined_at(ci_confined, ci_organic_duck, ti)
+            λ_inf *= conf_mult
         end
 
         if λ_inf <= zero(RT)

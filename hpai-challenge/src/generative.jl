@@ -13,7 +13,7 @@ using Random, Distributions
 Draw one parameter set from the prior distributions (matching models.jl).
 """
 function sample_prior_params(rng::AbstractRNG; model::Symbol = :full)
-    t₀ = rand(rng, truncated(Normal(15, 5), 1, 44))
+    t₀ = rand(rng, truncated(Normal(15, 5), 1, 75))
     φ_hrz = rand(rng, LogNormal(log(1e-3), 1.0))
     φ_non = rand(rng, LogNormal(log(1e-4), 1.0))
     δ = rand(rng, Exponential(1 / 50))
@@ -69,6 +69,8 @@ function simulate_epidemic(
     data::ModelData, params::NamedTuple;
     rng::AbstractRNG = Random.GLOBAL_RNG,
     T_end::Int = SIM_END,
+    disable_prev_cull::Bool = false,
+    daily_cull_capacity::Int = typemax(Int),
 )
     N = data.N
 
@@ -116,6 +118,9 @@ function simulate_epidemic(
     # Dynamic surveillance zones: zone_end_day[i] = last day farm i is in zone
     zone_end_day = zeros(Int, N)
 
+    # Capacity-limited culling queue
+    cull_queue = Tuple{Int,Int}[]
+
     # Outputs
     daily_infections = zeros(Int, T_end)
     case_farms = Int[]
@@ -124,8 +129,19 @@ function simulate_epidemic(
     for t in 1:T_end
         ψt = ψ_profile[t]
 
+        # Process capacity-limited culling queue
+        if daily_cull_capacity < typemax(Int) && !isempty(cull_queue)
+            n_to_cull = min(daily_cull_capacity, length(cull_queue))
+            for _ in 1:n_to_cull
+                (qi, _) = popfirst!(cull_queue)
+                if !culled[qi] && !infected[qi]
+                    culled[qi] = true
+                end
+            end
+        end
+
         # Check for newly confirmed cases (confirmation = infection + COMPOUND_DELAY)
-        # and trigger surveillance zones + preventive culling
+        # and trigger surveillance zones + phased preventive culling
         for ci in eachindex(case_farms)
             tc = case_days[ci] + COMPOUND_DELAY
             tc != t && continue
@@ -141,14 +157,38 @@ function simulate_epidemic(
                 end
             end
 
-            # Preventive culling (from PREV_CULL_START_DAY onwards)
-            if tc >= PREV_CULL_START_DAY
-                for i in 1:N
-                    (infected[i] || culled[i]) && continue
-                    dx = data.x[i] - data.x[cf]
-                    dy = data.y[i] - data.y[cf]
-                    if dx * dx + dy * dy <= PREV_CULL_RADIUS^2
-                        culled[i] = true
+            # Phased preventive culling (skipped if disabled)
+            if !disable_prev_cull && tc >= PREV_CULL_START_DAY
+                if tc < PREV_CULL_POLICY_CHANGE_DAY
+                    # Phase 1: 1 km, all species
+                    radius_sq = PREV_CULL_RADIUS_P1^2
+                    for i in 1:N
+                        (infected[i] || culled[i]) && continue
+                        dx = data.x[i] - data.x[cf]
+                        dy = data.y[i] - data.y[cf]
+                        if dx * dx + dy * dy <= radius_sq
+                            if daily_cull_capacity < typemax(Int)
+                                push!(cull_queue, (i, t))
+                            else
+                                culled[i] = true
+                            end
+                        end
+                    end
+                else
+                    # Phase 2: 3 km, chicken only
+                    radius_sq = PREV_CULL_RADIUS_P2^2
+                    for i in 1:N
+                        (infected[i] || culled[i]) && continue
+                        data.is_duck[i] && continue
+                        dx = data.x[i] - data.x[cf]
+                        dy = data.y[i] - data.y[cf]
+                        if dx * dx + dy * dy <= radius_sq
+                            if daily_cull_capacity < typemax(Int)
+                                push!(cull_queue, (i, t))
+                            else
+                                culled[i] = true
+                            end
+                        end
                     end
                 end
             end
@@ -206,6 +246,10 @@ function simulate_epidemic(
             λ *= sp
             if in_zone
                 λ *= (1.0 - EPSILON)
+            end
+            if data.is_confined[j] && t >= CONFINEMENT_START_DAY &&
+               !(data.is_organic_duck[j] && t >= CONFINEMENT_END_DAY_ORGANIC_DUCK)
+                λ *= CONFINEMENT_FACTOR
             end
 
             # Stochastic infection
@@ -301,26 +345,46 @@ function prepare_synthetic_data(data::ModelData, sim::NamedTuple)
         ci = case_idx[c]
         tc = case_confirm_day[c]
         (tc < PREV_CULL_START_DAY || tc > T) && continue
-        for i in 1:N
-            (case_farm_set[i] || prev_cull_set[i]) && continue
-            dx = data.x[i] - data.x[ci]
-            dy = data.y[i] - data.y[ci]
-            if dx * dx + dy * dy <= PREV_CULL_RADIUS^2
-                push!(prev_cull_idx, i)
-                push!(prev_cull_day, tc)
-                prev_cull_set[i] = true
+
+        if tc < PREV_CULL_POLICY_CHANGE_DAY
+            # Phase 1: 1 km, all species
+            radius_sq = PREV_CULL_RADIUS_P1^2
+            for i in 1:N
+                (case_farm_set[i] || prev_cull_set[i]) && continue
+                dx = data.x[i] - data.x[ci]
+                dy = data.y[i] - data.y[ci]
+                if dx * dx + dy * dy <= radius_sq
+                    push!(prev_cull_idx, i)
+                    push!(prev_cull_day, tc)
+                    prev_cull_set[i] = true
+                end
+            end
+        else
+            # Phase 2: 3 km, chicken only
+            radius_sq = PREV_CULL_RADIUS_P2^2
+            for i in 1:N
+                (case_farm_set[i] || prev_cull_set[i]) && continue
+                data.is_duck[i] && continue
+                dx = data.x[i] - data.x[ci]
+                dy = data.y[i] - data.y[ci]
+                if dx * dx + dy * dy <= radius_sq
+                    push!(prev_cull_idx, i)
+                    push!(prev_cull_day, tc)
+                    prev_cull_set[i] = true
+                end
             end
         end
     end
     n_prev_culls = length(prev_cull_idx)
 
-    # Recompute bulk counts
-    bulk_counts = zeros(Int, 8, T)
+    # Recompute bulk counts (time-varying confinement for organic ducks)
+    bulk_counts = zeros(Int, 16, T)
     for i in 1:N
         (case_farm_set[i] || prev_cull_set[i]) && continue
         for t in 1:T
             data.active[i, t] || continue
-            bin = bin_index(data.is_duck[i], data.is_hrz[i], in_surv_zone[i, t])
+            is_conf_t = data.is_confined[i] && !(data.is_organic_duck[i] && t >= CONFINEMENT_END_DAY_ORGANIC_DUCK)
+            bin = bin_index(data.is_duck[i], data.is_hrz[i], in_surv_zone[i, t], is_conf_t)
             bulk_counts[bin, t] += 1
         end
     end
@@ -365,7 +429,7 @@ function prepare_synthetic_data(data::ModelData, sim::NamedTuple)
     end
 
     return ModelData(
-        N, data.is_duck, data.is_hrz, data.x, data.y,
+        N, data.is_duck, data.is_hrz, data.is_confined, data.is_organic_duck, data.production, data.x, data.y,
         data.active,
         data.nbr_idx, data.nbr_dist,
         data.mov_by_day,

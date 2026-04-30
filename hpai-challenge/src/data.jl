@@ -13,6 +13,9 @@ struct ModelData
     N::Int
     is_duck::BitVector        # true if species == "duck"
     is_hrz::BitVector         # true if farm in HRZ
+    is_confined::BitVector    # true if farm type is confined (broiler_2 or organic duck)
+    is_organic_duck::BitVector  # true if duck & organic (confinement lifted on day 76)
+    production::Vector{String}
     x::Vector{Float64}
     y::Vector{Float64}
 
@@ -43,9 +46,9 @@ struct ModelData
     in_surv_zone::BitMatrix   # N × T
 
     # Bulk spillover bins for non-case, non-prev-culled farms
-    # 8 bins: (duck/chicken) × (hrz/non) × (in_zone/out_zone) per day
+    # 16 bins: (duck/chicken) × (hrz/non) × (in_zone/out_zone) × (confined/not) per day
     # bulk_counts[bin, t] = number of active farms in that bin on day t
-    bulk_counts::Matrix{Int}  # 8 × T
+    bulk_counts::Matrix{Int}  # 16 × T
 
     # Flat neighbour arrays for case farms (cache-efficient)
     # For case c, neighbours are at flat_nbr_idx[flat_nbr_offset[c]:flat_nbr_offset[c+1]-1]
@@ -66,12 +69,12 @@ end
 # ── 4. Data loading ──────────────────────────────────────────────────────────
 
 """
-    bin_index(is_duck, is_hrz, in_zone) -> Int
+    bin_index(is_duck, is_hrz, in_zone, is_confined) -> Int
 
-Map (species, HRZ, zone) to a bin index 1–8.
+Map (species, HRZ, zone, confined) to a bin index 1–16.
 """
-function bin_index(is_duck::Bool, is_hrz::Bool, in_zone::Bool)::Int
-    return 1 + Int(is_duck) + 2 * Int(is_hrz) + 4 * Int(in_zone)
+function bin_index(is_duck::Bool, is_hrz::Bool, in_zone::Bool, is_confined::Bool)::Int
+    return 1 + Int(is_duck) + 2 * Int(is_hrz) + 4 * Int(in_zone) + 8 * Int(is_confined)
 end
 
 """
@@ -90,8 +93,20 @@ function prepare_model_data(; max_dist::Float64 = 50_000.0, verbose::Bool = true
     x = Float64.(pop.x)
     y = Float64.(pop.y)
     is_duck = pop.species .== "duck"
+    production = String.(pop.production)
 
-    verbose && println("Loaded $N farms ($(sum(is_duck)) duck, $(sum(.!is_duck)) chicken)")
+    # Confined farm types: broiler_2 (chicken) and organic (duck)
+    is_confined = BitVector(
+        (production[i] == "broiler_2") || (is_duck[i] && production[i] == "organic")
+        for i in 1:N
+    )
+
+    is_organic_duck = BitVector(
+        is_duck[i] && production[i] == "organic"
+        for i in 1:N
+    )
+
+    verbose && println("Loaded $N farms ($(sum(is_duck)) duck, $(sum(.!is_duck)) chicken, $(sum(is_confined)) confined, $(sum(is_organic_duck)) organic duck)")
 
     # ── HRZ membership ──
     is_hrz = identify_hrz_farms(x, y)
@@ -224,12 +239,14 @@ function prepare_model_data(; max_dist::Float64 = 50_000.0, verbose::Bool = true
 
     # ── Bulk spillover bins ──
     # For farms that are neither cases nor preventively culled
-    bulk_counts = zeros(Int, 8, T)
+    bulk_counts = zeros(Int, 16, T)
     for i in 1:N
         (case_farm_set[i] || prev_cull_set[i]) && continue
         for t in 1:T
             active[i, t] || continue
-            bin = bin_index(is_duck[i], is_hrz[i], in_surv_zone[i, t])
+            # Organic duck confinement lifted on CONFINEMENT_END_DAY_ORGANIC_DUCK
+            is_conf_t = is_confined[i] && !(is_organic_duck[i] && t >= CONFINEMENT_END_DAY_ORGANIC_DUCK)
+            bin = bin_index(is_duck[i], is_hrz[i], in_surv_zone[i, t], is_conf_t)
             bulk_counts[bin, t] += 1
         end
     end
@@ -280,7 +297,7 @@ function prepare_model_data(; max_dist::Float64 = 50_000.0, verbose::Bool = true
     verbose && println("Susceptible-farm neighbour arrays: $(length(susceptible_with_nbrs)) farms")
 
     data = ModelData(
-        N, is_duck, is_hrz, x, y,
+        N, is_duck, is_hrz, is_confined, is_organic_duck, production, x, y,
         active,
         nbr_idx, nbr_dist,
         mov_by_day,

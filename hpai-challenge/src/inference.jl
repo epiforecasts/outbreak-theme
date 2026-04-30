@@ -17,7 +17,7 @@ function find_map_spillover(data::ModelData, in_zone::BitMatrix; n_samples::Int 
 
     rng = Random.MersenneTwister(42)
 
-    d_t₀ = truncated(Normal(15, 5), 1, 44)
+    d_t₀ = truncated(Normal(15, 5), 1, 75)
     d_φ_hrz = LogNormal(log(1e-3), 1.0)
     d_φ_non = LogNormal(log(1e-4), 1.0)
     d_δ = Exponential(1/50)
@@ -70,7 +70,7 @@ function find_map_full(data::ModelData, in_zone::BitMatrix; n_samples::Int = 100
 
     rng = Random.MersenneTwister(42)
 
-    d_t₀ = truncated(Normal(15, 5), 1, 44)
+    d_t₀ = truncated(Normal(15, 5), 1, 75)
     d_φ_hrz = LogNormal(log(1e-3), 1.0)
     d_φ_non = LogNormal(log(1e-4), 1.0)
     d_δ = Exponential(1/50)
@@ -146,19 +146,27 @@ function run_inference(
     println("\nRunning MCMC: $n_chains chains × $n_samples samples (+ $n_warmup warmup)")
     println("Target acceptance: $target_accept, max tree depth: $max_depth")
 
-    # Turing expects init_params as a vector of values in parameter declaration order.
-    base_vec = collect(values(init_params))
+    # Turing ≥0.43 uses InitFromParams(NamedTuple); wrap accordingly.
+    function wrap_init(nt::NamedTuple)
+        isdefined(Turing, :InitFromParams) ? Turing.InitFromParams(nt) : collect(values(nt))
+    end
 
     chains = if n_chains > 1
         # Small multiplicative jitter to diversify chain starting points
         jitter_rng = Random.MersenneTwister(42)
-        init_vecs = [base_vec .* (1.0 .+ 0.01 .* randn(jitter_rng, length(base_vec)))
-                     for _ in 1:n_chains]
+        base_vec = collect(values(init_params))
+        param_keys = keys(init_params)
+        init_strats = [
+            let jittered = base_vec .* (1.0 .+ 0.01 .* randn(jitter_rng, length(base_vec)))
+                wrap_init(NamedTuple{param_keys}(Tuple(jittered)))
+            end
+            for _ in 1:n_chains
+        ]
         sample(model, sampler, MCMCSerial(), n_samples, n_chains;
-               initial_params=init_vecs, progress=true)
+               initial_params=init_strats, progress=true)
     else
         sample(model, sampler, n_samples;
-               initial_params=base_vec, progress=true)
+               initial_params=wrap_init(init_params), progress=true)
     end
 
     print_diagnostics(chains)

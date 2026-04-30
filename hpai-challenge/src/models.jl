@@ -9,7 +9,7 @@ Captures early dynamics and HRZ contrast without farm-to-farm transmission.
 Spillover profile is a Bateman function: rises from t₀ with rate σ, decays with rate δ.
 """
 Turing.@model function spillover_model(data::ModelData, in_zone::BitMatrix)
-    t₀ ~ truncated(Normal(15, 5), 1, 44)
+    t₀ ~ truncated(Normal(15, 5), 1, 75)
     φ_hrz ~ LogNormal(log(1e-3), 1.0)
     φ_non ~ LogNormal(log(1e-4), 1.0)
     δ ~ Exponential(1/50)     # scale parameterisation: mean = 0.02/day
@@ -25,7 +25,7 @@ Includes spillover, spatial transmission, and movement transmission.
 Spillover profile is a Bateman function: rises from t₀ with rate σ, decays with rate δ.
 """
 Turing.@model function full_model(data::ModelData, in_zone::BitMatrix)
-    t₀ ~ truncated(Normal(15, 5), 1, 44)
+    t₀ ~ truncated(Normal(15, 5), 1, 75)
     φ_hrz ~ LogNormal(log(1e-3), 1.0)
     φ_non ~ LogNormal(log(1e-4), 1.0)
     δ ~ Exponential(1/50)     # scale parameterisation: mean = 0.02/day
